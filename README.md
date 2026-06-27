@@ -19,12 +19,25 @@
 
 같은 자동화를 두 UX 모두로 호출할 수 있습니다 — 내부적으로 같은 `SKILL.md` 를 호출하기 때문입니다.
 
+### 첫 클론 — 한 번만
+
+```bash
+git clone <사내-frameai-url> && cd frameai
+bash setup.sh                # 의존성 + 권한 + 스모크 테스트
+```
+
 ### 현장 엔지니어 (CLI 안 침)
 
 1. **frame 폴더에서 `claude` 실행** (Claude Code 앱이 자동으로 frameai 의 `.claude/` 발견)
 2. 화면에 spec.pdf / defect.png 등을 **드래그**
 3. 채팅창에 자연어로: *"이 변경 사항으로 ECN 작성해 줘"* (또는 `/ecn-writer M1 CD 22→18nm`)
 4. 결과 파일이 인라인 표시 + `automations/ecn-writer/runs/<시각>/outputs/` 에 자동 저장
+
+### 최신 자동화 받기 (며칠/몇 주 후)
+
+```bash
+./frame update               # git pull + setup 재실행 + 추가된 스킬 표시
+```
 
 ### 자동화 작성자 (CLI Quickstart)
 
@@ -209,6 +222,25 @@ frameai/
   · `/verify` 직접 위임 (kit 재구현 대신 플랫폼 우선)
 - **격리**: git worktree 기반 병렬 에이전트 작업, 공유 파일은 `flock` +
   `registry_edit` 으로 동시성 보호
+
+## 사내 배포 시 보안
+
+**가장 중요**: 기본 설정에서 데이터는 Anthropic 미국 인프라로 전송됩니다.
+사내 Confidential 데이터를 다루려면 **AWS Bedrock 서울 리전 라우팅**
+(`CLAUDE_CODE_USE_BEDROCK=1` + `AWS_REGION=ap-northeast-2`) 필수.
+
+상세 + 데이터 분류 권장 정책 + PII 마스킹 운영안: **[docs/security.md](docs/security.md)** 참고.
+
+이미 작동 중인 보호 장치:
+- `secret_guard` 훅 — API 키 / 토큰 패턴의 Write/Edit 자동 차단
+- `dangerous_command_guard` 훅 — `rm -rf` 등 파괴적 명령 차단
+- 매 호출 archive — `runs/<ts>/` 에 입력·프롬프트·출력·로그 4종 보관
+- `separate-context auditor` — refute-first 프롬프트로 별도 컨텍스트 검증
+
+아직 없는 부분 (마일스톤 별 로드맵은 [CONCEPT.md](CONCEPT.md#future-works)):
+- 자동 PII 마스킹
+- 네트워크 egress 매니페스트
+- 데이터 분류 자동 게이트
 
 ## 한계와 정직한 면
 

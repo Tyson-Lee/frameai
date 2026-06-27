@@ -363,6 +363,68 @@ def cmd_refine(args: argparse.Namespace) -> int:
     return subprocess.run(["claude", "--print", prompt], cwd=ROOT).returncode
 
 
+def cmd_update(args: argparse.Namespace) -> int:
+    """Pull the latest skills/agents from the remote and re-run setup."""
+    # 1. Safety: refuse if local working tree has uncommitted changes
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if status.returncode != 0:
+        print("frame update: not a git repository.", file=sys.stderr)
+        return 2
+    if status.stdout.strip() and not args.force:
+        print(
+            "frame update: refusing — working tree has uncommitted changes:\n"
+            f"{status.stdout}"
+            "Commit, stash, or rerun with --force to discard.",
+            file=sys.stderr,
+        )
+        return 2
+
+    # 2. Snapshot what's installed before pull
+    skills_before = {p.name for p in SKILLS.iterdir() if p.is_dir()}
+
+    # 3. git pull
+    if args.dry_run:
+        print("(dry-run) would run: git pull --ff-only origin main")
+    else:
+        pull = subprocess.run(
+            ["git", "pull", "--ff-only", "origin", "main"],
+            cwd=ROOT,
+        )
+        if pull.returncode != 0:
+            print(
+                "frame update: git pull failed. Resolve manually and re-run.",
+                file=sys.stderr,
+            )
+            return pull.returncode
+
+    # 4. Re-run setup.sh if present (idempotent)
+    setup = ROOT / "setup.sh"
+    if setup.is_file() and not args.dry_run:
+        subprocess.run(["bash", str(setup)], cwd=ROOT, check=False)
+
+    # 5. Print delta
+    if not args.dry_run:
+        skills_after = {p.name for p in SKILLS.iterdir() if p.is_dir()}
+        added = sorted(skills_after - skills_before)
+        removed = sorted(skills_before - skills_after)
+        if added or removed:
+            print()
+            print("Skill changes:")
+            for s in added:
+                print(f"  + {s}")
+            for s in removed:
+                print(f"  - {s}")
+        else:
+            print()
+            print("No skill additions or removals in this update.")
+    return 0
+
+
 def cmd_share(args: argparse.Namespace) -> int:
     slug = args.name
     paths = [AUTOMATIONS / slug, SKILLS / slug]
@@ -464,6 +526,22 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("name")
     s.add_argument("-m", "--message", help="Override the default commit message.")
     s.set_defaults(func=cmd_share)
+
+    u = sub.add_parser(
+        "update",
+        help="Pull the latest skills/agents from the remote and re-run setup.",
+    )
+    u.add_argument(
+        "--force",
+        action="store_true",
+        help="Pull even if the working tree has uncommitted changes (discards them).",
+    )
+    u.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would happen without pulling.",
+    )
+    u.set_defaults(func=cmd_update)
 
     return p
 
