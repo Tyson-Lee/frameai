@@ -19,12 +19,28 @@
 
 같은 자동화를 두 UX 모두로 호출할 수 있습니다 — 내부적으로 같은 `SKILL.md` 를 호출하기 때문입니다.
 
-### 첫 클론 — 한 번만
+### 첫 설치 — 한 번만 (터미널 없이)
+
+**방법 A — Claude Code 채팅창에서 설치 (권장, 현장 엔지니어)**
+
+1. Claude Code 앱 실행 (사내 사용자에게 이미 설치되어 있다고 가정)
+2. 채팅창에 한 줄: *"FrameAI 설치해줘"*
+3. Claude 가 다음 명령을 자체 Bash 도구로 실행:
+   ```
+   curl -fsSL https://<사내-frameai-호스트>/install.sh | bash
+   ```
+4. 끝. 설치된 폴더 (`~/frameai/`) 를 Claude Code 에서 열기.
+
+**방법 B — 터미널 직접 (자동화 작성자 / IT)**
 
 ```bash
-git clone <사내-frameai-url> && cd frameai
-bash setup.sh                # 의존성 + 권한 + 스모크 테스트
+curl -fsSL https://<사내-frameai-호스트>/install.sh | bash
+# 또는 위치 지정:
+FRAMEAI_HOME=~/my-frameai bash install.sh
 ```
+
+`install.sh` 가 자동으로 git clone + `setup.sh` 까지 실행합니다. 별도
+명령 불필요.
 
 ### 현장 엔지니어 (CLI 안 침)
 
@@ -33,11 +49,16 @@ bash setup.sh                # 의존성 + 권한 + 스모크 테스트
 3. 채팅창에 자연어로: *"이 변경 사항으로 ECN 작성해 줘"* (또는 `/ecn-writer M1 CD 22→18nm`)
 4. 결과 파일이 인라인 표시 + `automations/ecn-writer/runs/<시각>/outputs/` 에 자동 저장
 
-### 최신 자동화 받기 (며칠/몇 주 후)
+### 최신 자동화 받기 (Claude Code 채팅에서)
 
-```bash
-./frame update               # git pull + setup 재실행 + 추가된 스킬 표시
-```
+채팅창에 한 줄:
+
+> *"FrameAI 업데이트해줘"* 또는 `/frameai-update`
+
+`/frameai-update` 슬래시 명령이 내부적으로 `./frame update` 를 호출하고,
+새로 추가된 자동화를 한국어로 요약해서 보여줍니다. 터미널 0회.
+
+(터미널을 쓰는 IT/자동화 작성자는 `./frame update` 도 동일하게 작동합니다.)
 
 ### 자동화 작성자 (CLI Quickstart)
 
