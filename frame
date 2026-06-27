@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""frame — FrameAI command-line interface.
+
+FrameAI lets a user describe a repetitive task in natural language and
+have an AI team plan, design, implement, test, and document the
+automation end-to-end. The output lands under `automations/<slug>/` as a
+self-contained folder that's shareable like any other library entry.
+
+Usage:
+    frame add "<natural-language description of the task>"
+    frame list
+    frame run <slug> [args...]
+    frame share <slug>
+
+`frame add` drives Claude Code headlessly (`claude --print`) — the
+single user input is the description; from there, the kit's agents take
+over until the automation is ready to run.
+
+This file is intentionally small (one-file CLI). Look at agents/,
+skills/, and scripts/ for the production work that runs underneath.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+AUTOMATIONS = ROOT / "automations"
+PROMPT_TEMPLATE = """\
+You are FrameAI's autonomous build pipeline. The user has described a
+repetitive task they want to automate. Your job is to plan, design,
+implement, test, and document a working automation that solves it.
+
+Run the kit's pipeline end-to-end without further prompting:
+  1. /prd {input_path}            — turn the description into a PRD
+  2. /kickoff                     — produce requirements + architecture + issues
+  3. /sprint                      — execute each issue (worktree-isolated)
+  4. /ship                        — finalize the artifacts
+
+All generated artifacts live under: {output_dir}
+At the end, also write {output_dir}/before_after.md with the user's
+estimated original-task time vs. the automation's runtime.
+
+The user's description follows in the input file. Do not ask the user
+follow-up questions unless a critical ambiguity blocks structural work.
+"""
+
+
+def slugify(text: str) -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return (s[:60] or "automation").strip("-")
+
+
+def cmd_add(args: argparse.Namespace) -> int:
+    description = args.description.strip()
+    if not description:
+        print("frame add: description must be non-empty", file=sys.stderr)
+        return 2
+
+    slug = args.slug or slugify(description)
+    target = AUTOMATIONS / slug
+    if target.exists() and not args.force:
+        print(
+            f"frame add: automations/{slug}/ already exists. Use --force to overwrite "
+            f"or pass --slug to choose a different name.",
+            file=sys.stderr,
+        )
+        return 2
+
+    target.mkdir(parents=True, exist_ok=True)
+    input_path = target / "input.md"
+    input_path.write_text(
+        f"# Automation: {slug}\n\n"
+        f"_Created: {datetime.now(timezone.utc).isoformat(timespec='seconds')}_\n\n"
+        f"## User description\n\n{description}\n",
+        encoding="utf-8",
+    )
+
+    output_dir = target / "generated"
+    output_dir.mkdir(exist_ok=True)
+
+    prompt = PROMPT_TEMPLATE.format(
+        input_path=input_path.relative_to(ROOT),
+        output_dir=output_dir.relative_to(ROOT),
+    )
+
+    print(f"FrameAI: created automations/{slug}/")
+    print(f"FrameAI: dispatching Claude Code (headless) — no further input needed.")
+    print()
+
+    if shutil.which("claude") is None:
+        print(
+            "FrameAI: `claude` CLI not found on PATH. Install Claude Code, "
+            "then re-run `frame add --resume` (or run `claude` manually in this repo).",
+            file=sys.stderr,
+        )
+        return 3
+
+    if args.dry_run:
+        print("--- prompt (--dry-run) ---")
+        print(prompt)
+        return 0
+
+    completed = subprocess.run(
+        ["claude", "--print", prompt],
+        cwd=ROOT,
+    )
+    return completed.returncode
+
+
+def cmd_list(_args: argparse.Namespace) -> int:
+    if not AUTOMATIONS.exists():
+        print("No automations yet. Run: frame add \"<description>\"")
+        return 0
+    rows = []
+    for d in sorted(AUTOMATIONS.iterdir()):
+        if not d.is_dir():
+            continue
+        generated = d / "generated"
+        run_sh = d / "run.sh"
+        status = "ready" if run_sh.exists() else ("built" if generated.exists() else "draft")
+        rows.append((d.name, status))
+    if not rows:
+        print("No automations yet. Run: frame add \"<description>\"")
+        return 0
+    width = max(len(name) for name, _ in rows)
+    for name, status in rows:
+        print(f"  {name:<{width}}  [{status}]")
+    return 0
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    target = AUTOMATIONS / args.name
+    run_sh = target / "run.sh"
+    if not run_sh.exists():
+        print(
+            f"frame run: automations/{args.name}/run.sh not found. "
+            "Has the automation finished building? Check `frame list`.",
+            file=sys.stderr,
+        )
+        return 2
+    return subprocess.run(["bash", str(run_sh)] + list(args.rest), cwd=target).returncode
+
+
+def cmd_share(args: argparse.Namespace) -> int:
+    target = AUTOMATIONS / args.name
+    if not target.is_dir():
+        print(f"frame share: no such automation {args.name!r}", file=sys.stderr)
+        return 2
+    subprocess.run(["git", "add", str(target.relative_to(ROOT))], cwd=ROOT, check=True)
+    msg = args.message or f"feat(automations): add {args.name}"
+    subprocess.run(["git", "commit", "-m", msg], cwd=ROOT, check=True)
+    print(f"FrameAI: committed automations/{args.name}/")
+    print("Push with: git push  (after `git remote add origin ...`)")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="frame",
+        description="FrameAI — automation of automation. "
+        "Describe a repetitive task; AI plans, builds, tests, and documents it.",
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    a = sub.add_parser("add", help="Add a new automation from a natural-language description.")
+    a.add_argument("description", help="One paragraph describing the repetitive task.")
+    a.add_argument("--slug", help="Override the generated slug.")
+    a.add_argument("--force", action="store_true", help="Overwrite an existing automation folder.")
+    a.add_argument("--dry-run", action="store_true", help="Print the dispatch prompt and exit without calling claude.")
+    a.set_defaults(func=cmd_add)
+
+    sub.add_parser("list", help="List all automations and their build status.").set_defaults(func=cmd_list)
+
+    r = sub.add_parser("run", help="Run a built automation.")
+    r.add_argument("name", help="Automation slug (see `frame list`).")
+    r.add_argument("rest", nargs="*", help="Extra args forwarded to the automation's run.sh.")
+    r.set_defaults(func=cmd_run)
+
+    s = sub.add_parser("share", help="Stage + commit an automation for sharing.")
+    s.add_argument("name")
+    s.add_argument("-m", "--message", help="Override the default commit message.")
+    s.set_defaults(func=cmd_share)
+
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

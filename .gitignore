@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Claude Code runtime state
+.claude/run/
+.claude-kit/freeze-dir.txt
+.claude-kit/
+
+# Worktrees (not committed)
+.worktrees/
+
+# Generated test outputs
+docs/references/research/*.html
+docs/references/research/*.meta.json
+docs/references/research/*.txt
+docs/.review/
+docs/.verify/
+
+# Local secrets (never)
+.env
+.env.local
+*.pem
+*.key

@@ -1,0 +1,62 @@
+---
+name: prd
+description: Collaboratively writes a PRD through free-form conversation.
+argument-hint: [output file path, default PRD.md]
+disable-model-invocation: false
+allowed-tools: Read, Glob, Grep, Write, Edit
+---
+
+{{PREAMBLE}}
+Steps:
+1) Determine the output path ($ARGUMENTS or PRD.md).
+2) Check if the file already exists at that path.
+3) Read `docs/example_prd.md` to load the reference PRD format.
+3.5) Check if `docs/brainstorm_notes.md` exists. If it does, read it and use as
+     additional context — problem space, target users, chosen direction. Pre-fill
+     answers to questions already covered in the brainstorm notes.
+3.6) Check if `docs/business_analysis.md` exists. If it does, read it and use as
+     additional context — market analysis, competitive landscape, business model direction, risks.
+
+### If the file does NOT exist (New PRD):
+4a) Ask the user to freely describe their product idea.
+5a) Analyze the input and identify missing PRD sections (Background, Goals, Target User, User Stories, Functional Requirements, Non-functional Requirements, Out of Scope, Success Metrics, Technical Notes).
+6a) Ask clarifying questions conversationally — one or two gaps at a time.
+7a) When enough information is gathered, generate a PRD draft following the example format and present it to the user.
+
+### If the file DOES exist (Update PRD):
+4b) Read the existing PRD and present a brief summary to the user.
+5b) Ask the user what they want to change, add, or remove.
+6b) Identify which sections are affected and flag any new gaps or inconsistencies.
+7b) Ask clarifying questions about ambiguous changes.
+8b) Generate the updated PRD, preserving unchanged sections. Highlight what changed (added/modified/removed).
+
+### Common (both modes):
+8) Incorporate user feedback and iterate until the user approves.
+9) Save the final PRD to the output path.
+10) Inform the user they can run `/kickoff <path>` to generate planning documents from the PRD.
+
+## Error Handling
+- If `docs/example_prd.md` is not found: warn the user and use a reasonable default PRD structure.
+- If the output path is not writable: report the error and ask for an alternative path.
+
+## Quality Criteria
+
+**NEVER:**
+- Invent requirements the user hasn't mentioned — ask instead
+- Dump a full PRD template and ask the user to fill it in — that's a form, not a conversation
+- Ask more than 2 questions at a time — keep it conversational
+- Skip sections silently — if a section is thin, mark it with `<!-- TODO: flesh out -->`
+- Write vague goals like "improve user experience" — goals must be specific and measurable
+
+**INSTEAD:**
+- Ask about gaps naturally, one or two at a time, with concrete examples
+- Propose draft text for ambiguous areas and let the user correct it
+- Use the user's own words and terminology — don't impose PM jargon
+- Every user story follows "As a [role], I want [action] so that [benefit]"
+- Success metrics are quantitative: "50% reduction in X" not "improve X"
+
+## Guidelines
+- This is an interactive, conversational skill — engage naturally.
+- If the user says "that's enough" or similar, generate the best PRD possible with available information.
+- Mark thin sections with `<!-- TODO: flesh out -->` if the user wants to finalize early.
+- After saving, suggest next step: `/kickoff <path>` to generate planning documents.

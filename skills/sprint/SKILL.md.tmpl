@@ -1,0 +1,195 @@
+---
+name: sprint
+description: Autonomously implements, reviews, and ships all issues in issues.md, with dynamic issue management.
+argument-hint: [--parallel N] [--max-iterations N]
+allowed-tools: Task, Read, Glob, Grep, Write, Edit, Bash(bash scripts/checkpoint.sh *), Bash(bash scripts/wt_setup.sh *), Bash(bash scripts/wt_cleanup.sh *), Bash(bash scripts/registry_edit.sh *), Bash(bash scripts/flock_edit.sh *), Bash(bash scripts/worktree.sh *), Bash(bash scripts/kit_update_check.py *), Bash(python3 scripts/*), Bash(git *), Bash(gh *), Bash(pytest *), Bash(npm *)
+---
+
+{{PREAMBLE}}
+## Pre-conditions
+1) `issues.md` must exist with at least one issue in `backlog` status.
+2) `gh auth status` must succeed.
+3) All planning docs should exist (docs/architecture.md, etc.) — warn if missing.
+
+## Arguments
+- `--parallel N`: Max parallel issues (default: 3)
+- `--max-iterations N`: Max loop iterations (default: 20)
+
+## Argument Validation (run before anything else)
+1) Parse `$ARGUMENTS` for `--parallel N` and `--max-iterations N`:
+   - If `--parallel` is present, validate N is an integer between 1 and 10. If invalid, stop with: "Invalid --parallel value: must be an integer between 1 and 10."
+   - If `--max-iterations` is present, validate N is an integer between 1 and 100. If invalid, stop with: "Invalid --max-iterations value: must be an integer between 1 and 100."
+   - Unknown flags should be warned but not block execution.
+
+## IRON LAW: implement → review → ship (NEVER SKIP)
+
+**Every issue MUST pass through all three phases in order. No exceptions.**
+
+- An issue is NOT "done" until it is **shipped** (PR merged + smoke test passed).
+- New backlog issues are dispatched as **PIPELINE** (implement→review→ship in one invocation). This structurally prevents phase skipping — there is no decision point between phases.
+- Issues stuck mid-pipeline (`implemented` or `reviewed`) are retried via standalone REVIEW or SHIP actions.
+- You MUST NOT start a new PIPELINE if there are issues stuck in `implemented` or `reviewed` status. **Clear the pipeline first.**
+
+**Pipeline priority order** (enforced by `scripts/sprint_queue.py` — do NOT override):
+1. Ship any issues in `reviewed` status (highest priority)
+2. Review any issues in `implemented` status
+3. Only then: PIPELINE new `backlog` issues
+
+**Violation = sprint failure**: If at sprint end, ANY issue has Status=implemented or Status=reviewed (not shipped), the sprint is considered **incomplete**. Report these as unfinished pipeline items.
+
+## Algorithm
+
+1) Validate pre-conditions:
+   - Read `issues.md` — if no backlog issues, report "nothing to sprint" and stop.
+   - Run `gh auth status` — if fails, stop and instruct user to authenticate.
+   - Check for planning docs (architecture.md, requirements.md) — warn if missing but continue.
+
+2) Check for existing sprint state:
+   - If `docs/sprint_state.md` exists with Status=running, ask user: resume or start fresh?
+   - If resuming, load existing state.
+   - If fresh, delete old sprint_state.md and create a new one from `templates/sprint_state.md`.
+
+3) Gather context (read once, reuse across iterations):
+   **Read all context files via parallel Read tool calls in a single message. Do NOT read them sequentially.**
+   - `issues.md` — full content
+   - `docs/sprint_state.md` — current state
+   - `docs/review_lessons.md` — if exists
+   - `docs/architecture.md` — if exists
+   - `docs/data_model.md` — if exists
+   - `docs/prd_digest.md` — if exists (use as quick PRD context instead of full PRD)
+   - Parse --parallel and --max-iterations from arguments
+
+4) **Sprint loop** (iteration = 0; repeat while iteration < max-iterations):
+
+   **a) Read fresh state**: Re-read `docs/sprint_state.md` and `issues.md` every iteration.
+
+   **b-c) Compute next action (deterministic — do NOT override):**
+
+      Run the pipeline queue script:
+      ```bash
+      python3 scripts/sprint_queue.py next-action --sprint-state docs/sprint_state.md --issues issues.md --max-parallel {MAX_PARALLEL}
+      ```
+      **If the script exits with non-zero and no JSON output**: STOP the sprint and report the error. This indicates a parsing failure or circular dependency — do NOT proceed.
+
+      Parse the JSON output. The result contains `action`, `targets`, and `reason` fields.
+
+      - If action = **DONE** → **Go to step 5.**
+      - If action = **STUCK** → Log warning with the `reason`. Increment attempt counts for stuck issues in sprint_state.md. If attempts ≥ 3, escalate. Otherwise continue to next iteration.
+      - If action = **PIPELINE**, **SHIP**, or **REVIEW** → proceed to step 4d with the action and targets from the script output.
+
+      **IMPORTANT**: Do NOT manually compute queues or override the script's action choice. The script enforces strict priority ordering (SHIP > REVIEW > PIPELINE) to prevent phase skipping.
+
+      > For reference, the script computes these queues internally:
+      > - `ship_ready`    = issues where Phase = `reviewed`
+      > - `review_ready`  = issues where Phase = `implemented`
+      > - `pipeline_ready` = issues in `backlog` where Manual ≠ true AND all Depends-On are resolved
+      > - `in_flight`     = issues where Phase ∈ {`implementing`, `reviewing`, `shipping`}
+
+   **d) Invoke team-lead agent via Task tool** with this exact prompt structure:
+      ```
+      You are the team-lead agent. Execute the {action} phase for these issues.
+
+      ## Phase: {PIPELINE | SHIP | REVIEW}
+
+      ## Target Issues
+      {For each target: full issue spec from issues.md — ID, title, AC, all fields}
+
+      ## Current Sprint State
+      {Full content of docs/sprint_state.md}
+
+      ## Max Parallel: {N}
+
+      ## Project Context
+      {Content of architecture.md, data_model.md, review_lessons.md, prd_digest.md}
+
+      Execute this phase, update docs/sprint_state.md with results, then STOP.
+      Do NOT loop.
+      ```
+
+      **Phase meanings:**
+      - **PIPELINE**: Full implement→review→ship for backlog issues. Each issue goes through all three phases in one invocation. No phase can be skipped.
+      - **REVIEW**: Retry review for issues stuck in `implemented` status (recovery only).
+      - **SHIP**: Retry ship for issues stuck in `reviewed` status (recovery only).
+
+   **e) After team-lead returns**:
+      - Re-read `docs/sprint_state.md` to confirm phase transitions happened
+      - Log: `=== Iteration {N} complete: {action} phase for {count} issues ===`
+      - Increment iteration
+
+   **f) Validate phase transition (deterministic — do NOT skip):**
+
+      Run the validation script:
+      ```bash
+      python3 scripts/sprint_queue.py validate --sprint-state docs/sprint_state.md --action {ACTION} --targets {COMMA_SEPARATED_TARGETS}
+      ```
+      Parse the JSON output:
+      - If `valid` = true: all targets transitioned successfully (or stopped at a phase with logged error). Continue loop.
+      - If `valid` = false: log the `errors` array in sprint_state.md. The `stuck` list shows which issues failed to transition — they will be retried in the next iteration via REVIEW or SHIP action.
+
+   **Continue loop from step 4a.**
+
+5) **Pipeline completion gate** (before exiting):
+   - Read final `docs/sprint_state.md`
+   - Count issues still in `implemented` or `reviewed` (not shipped)
+   - If count > 0 AND iteration < max-iterations: **return to step 4** to drain the pipeline
+   - If count > 0 AND iterations exhausted: report as **INCOMPLETE PIPELINE** items
+
+6) Report sprint results to user:
+   - Issues shipped (completed)
+   - Issues stuck in pipeline (implemented/reviewed but not shipped) — flagged as **INCOMPLETE**
+   - Issues escalated (3+ failures)
+   - Issues waiting (blocked/deferred)
+   - New issues discovered during sprint
+
+## Agent Selection
+
+Team-lead uses this table to determine which agent(s) to dispatch per issue:
+
+| Issue characteristic | Agent(s) | Skill reference |
+|---------------------|----------|----------------|
+| General backend/logic | developer | skills/implement/SKILL.md |
+| UI/frontend (web) | uiux-developer | skills/implement/SKILL.md + UI context |
+| UI/frontend (mobile) | mobile-uiux-developer | skills/implement/SKILL.md + mobile context |
+| Infrastructure/CI/CD | devops | skills/devops/SKILL.md |
+| Bug fix | diagnostician | skills/diagnose/SKILL.md |
+| Refactoring | refactorer | skills/refactor/SKILL.md |
+| DB migration | migrator | skills/migrate/SKILL.md |
+| Architecture change needed | architect → data-modeler → developer | sequential |
+| Any completed implementation | reviewer | skills/review/SKILL.md |
+| UI implementation completed | reviewer + ui-reviewer | skills/review/SKILL.md |
+| Reviewed and approved | (ship steps) | skills/ship/SKILL.md |
+
+**How to determine**: Read the issue's title, Track field, and Implementation Notes. Keywords like "UI", "screen", "component" → UI agent. "Dockerfile", "CI", "deploy" → devops. "migrate", "schema change" → migrator.
+
+## Pipeline Phase Tracking
+
+Each issue progresses through these phases in `docs/sprint_state.md`:
+
+```
+backlog → implementing → implemented → reviewing → reviewed → shipping → shipped
+```
+
+**Phase meanings:**
+- `implementing`: implement in progress
+- `implemented`: implement done, checkpoint passed — **MUST review next**
+- `reviewing`: review in progress
+- `reviewed`: review approved — **MUST ship next**
+- `shipping`: ship in progress
+- `shipped`: PR merged, smoke test passed — **done**
+
+The team-lead reads these phases to enforce pipeline ordering:
+- Any issue in `implemented` → team-lead MUST review before implementing new issues
+- Any issue in `reviewed` → team-lead MUST ship before reviewing or implementing
+
+## Error Handling
+- If team-lead Task fails (returns error): log the error in sprint_state.md, then **continue the sprint loop** with the next iteration. The failed issues remain in their current phase and will be retried.
+- If pre-conditions fail: stop with clear instructions on how to fix.
+- Sprint state file ensures progress is never lost — user can re-run `/sprint` to resume.
+- **Per-phase recovery**: Each team-lead invocation handles one phase. If it fails, the sprint loop retries that phase in the next iteration. Successful phases are never re-run.
+- **Escalation**: If the same issue fails the same phase 3 times (tracked via Attempts column in sprint_state.md), mark as `waiting` with escalation reason and skip it. Report at sprint end.
+- **Review rework**: After 2 consecutive review failures on the same issue, mark Status=waiting, Reason=review-rework, defer to human.
+
+## Rollback
+- Sprint is composed of individual implement→review→ship cycles, each with their own rollback.
+- If sprint must be fully abandoned: issues.md still reflects accurate status per issue.
+- Delete `docs/sprint_state.md` to reset sprint state.

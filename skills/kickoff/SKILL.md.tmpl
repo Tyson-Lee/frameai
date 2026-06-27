@@ -1,0 +1,155 @@
+---
+name: kickoff
+description: Generates requirements/UX spec/architecture/data model/issues/test plan from a PRD. Runs 6 subagents in sequence.
+argument-hint: [PRD.md path]
+disable-model-invocation: true
+allowed-tools: Task, Read, Glob, Grep, Write, Edit
+---
+
+{{PREAMBLE}}
+## Algorithm
+
+### Phase 1 — Setup
+1) Ensure `docs/` directory exists.
+2) Read PRD (`$ARGUMENTS` or `PRD.md`). If not found, stop immediately and report.
+3) Read existing project files if any (README, pyproject.toml, etc.) to understand tech stack context.
+
+### Phase 1.5 — PRD Digest (MUST run before Phase 2)
+Regardless of PRD length, always generate a summary with the following structure and save it to `docs/prd_digest.md`:
+  - Goals (3 lines or fewer)
+  - Target User (1 line)
+  - Must-have Features (numbered list, 1 line each)
+  - Key NFRs (numbered list, 1 line each)
+  - Scope Boundaries (In/Out, 3 lines or fewer each)
+
+When passing context to subsequent subagents: include both the original PRD and `docs/prd_digest.md`.
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Verify `docs/prd_digest.md` exists and contains all required sections (Goals, Target User, Must-have Features, Key NFRs, Scope Boundaries).
+> If the file is missing or any section is empty: STOP and regenerate before proceeding.
+
+### Phase 2 — Run Subagents (dependency-aware, parallel where possible)
+
+**Step 1: requirement-analyst → `docs/requirements.md`**
+- Context to pass: Full PRD content + `docs/prd_digest.md`
+- Agent produces: Goals, prioritized user stories with AC, FRs, NFRs with measurable targets, scope, assumptions, risks
+- Verify output exists before proceeding
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Verify `docs/requirements.md` exists and contains Goals, User Stories, and NFRs sections.
+> If missing or incomplete: STOP and retry the requirement-analyst subagent before proceeding.
+
+**Step 2 & 3 — MUST invoke both subagents simultaneously via two parallel Task tool calls in a single message:**
+Both agents depend on requirements but NOT on each other. Run them in parallel to save ~5-8 minutes.
+
+**ux-designer → `docs/ux_spec.md`**
+- Context to pass: PRD + `docs/prd_digest.md` + `docs/requirements.md`
+- Agent produces: IA, key flows with error paths, screen list with 5 states each, copy guidelines, accessibility notes
+
+**architect → `docs/architecture.md`**
+- Context to pass: PRD + `docs/prd_digest.md` + `docs/requirements.md`
+- Note: ux_spec is NOT available yet (running in parallel). Architect focuses on tech stack and module design from requirements. UX-driven API refinements happen during implementation.
+- Agent produces: Tech stack, modules, data model, API design, security, deployment, tradeoffs table
+
+**After both Task calls return**, verify both outputs exist before proceeding.
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Verify both `docs/ux_spec.md` and `docs/architecture.md` exist.
+> - `docs/ux_spec.md` must contain Key Flows and screen definitions.
+> - `docs/architecture.md` must contain tech stack and module design.
+> If either file is missing or empty: STOP and retry the failed subagent before proceeding.
+
+**Step 4: data-modeler → `docs/data_model.md`**
+- Context to pass: PRD + `docs/prd_digest.md` + `docs/requirements.md` + `docs/ux_spec.md` + `docs/architecture.md`
+- Agent produces: Access patterns, detailed schema (tables, columns, types, constraints), indexes with justification, migration strategy, seed data, query patterns, scaling notes
+- Verify output exists before proceeding
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Verify `docs/data_model.md` exists and contains schema definitions with tables, columns, and types.
+> If missing or incomplete: STOP and retry the data-modeler subagent before proceeding.
+
+**Step 5 & 6 — MUST invoke both subagents simultaneously via two parallel Task tool calls in a single message (no dependency between them):**
+
+**planner → `issues.md`**
+- Context to pass: PRD + `docs/prd_digest.md` + `docs/requirements.md` + `docs/ux_spec.md` + `docs/architecture.md` + `docs/data_model.md` + `docs/review_lessons.md` (if exists)
+- Agent produces: Issues sized 0.5d–1.5d with AC, tests, dependencies, implementation notes
+- Instruct the planner to set the `UI` field on each issue: `true` if the issue involves UI/frontend work (screens, components, styling, user-facing interactions), `false` otherwise.
+
+**qa-designer → `docs/test_plan.md`**
+- Context to pass: PRD + `docs/prd_digest.md` + `docs/requirements.md` + `docs/ux_spec.md` + `docs/architecture.md` + `docs/data_model.md`
+- Agent produces: Risk matrix, critical flow test cases, edge cases, fixtures, automation candidates, smoke checklist
+
+**After both Task calls return**, verify both outputs exist before proceeding to Phase 3.
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Verify both `issues.md` and `docs/test_plan.md` exist.
+> - `issues.md` must contain at least one `### ISSUE-` block with AC and metadata fields.
+> - `docs/test_plan.md` must contain Strategy and Critical Flows sections.
+> If either file is missing or empty: STOP and retry the failed subagent before proceeding.
+
+### Phase 3 — Supporting Documents
+4) Create/update `docs/README.md`:
+   - Project name and description (from PRD)
+   - Prerequisites (from architecture tech stack)
+   - Setup instructions (install, configure, run)
+   - Test instructions
+5) Create/update `STATUS.md`:
+   - Current milestone (from PRD goals)
+   - Issue summary (total, by priority, by track)
+   - Key risks (from requirements)
+   - Next issues to implement (top 3 P0 issues)
+
+### Phase 4 — Verification
+6) Run `scripts/validate_issues.py issues.md` to validate issue quality:
+   - If violations are found, re-invoke the planner subagent once with the violation list and ask it to fix the issues.
+   - If violations remain after the retry, log them in `STATUS.md` under `## Warnings` and proceed.
+6.5) **Cross-document validation** — verify consistency between subagent outputs:
+   - **data_model ↔ architecture**: Entity names in `docs/data_model.md` should match the data model overview in `docs/architecture.md`. Flag mismatches.
+   - **issues ↔ requirements**: Every FR/NFR referenced in `issues.md` (PRD-Ref field) should exist in `docs/requirements.md`. Flag dangling references.
+   - **test_plan ↔ requirements**: Critical flows in `docs/test_plan.md` should map to high-priority requirements. Flag uncovered Must-have FRs.
+   - **ux_spec ↔ requirements**: Every user story in `docs/requirements.md` should have at least one screen or flow in `docs/ux_spec.md`. Flag orphans.
+   - If mismatches are found: log them in `STATUS.md` under `## Cross-Validation Warnings` and proceed. These are informational — they do NOT block the pipeline.
+7) Verify all required outputs exist:
+   - `docs/requirements.md`
+   - `docs/ux_spec.md`
+   - `docs/architecture.md`
+   - `docs/data_model.md`
+   - `docs/test_plan.md`
+   - `issues.md`
+   - `STATUS.md`
+8) Report summary to the user:
+   - Number of FRs/NFRs identified
+   - Number of screens in UX spec
+   - Architecture style chosen
+   - Number of issues created
+   - Suggest next step: `/uiux` (web UI project), `/mobile-uiux` (mobile app project), or `/implement ISSUE-001`
+
+## Subagent Invocation Pattern
+
+When invoking each subagent via the Task tool:
+- Include the agent name in the prompt (e.g., "You are the requirement-analyst agent")
+- Pass the full content of input documents — do NOT just pass file paths
+- Specify the exact output file path
+- Include: "Write your output to `docs/<file>.md`. Follow your agent guidelines precisely."
+
+## Error Handling
+- If a subagent fails (Task tool returns error):
+  1. Retry the failed subagent once with the same context.
+  2. If it fails again, skip with a warning message and continue with remaining subagents.
+  3. Log the skipped subagent in `STATUS.md` under a `## Warnings` section.
+- If the PRD file is not found: stop immediately and report the missing path.
+- If `docs/` cannot be created: stop immediately and report the filesystem error.
+- If a subagent produces empty or malformed output: treat as failure, retry once.
+
+## Rollback
+- Kickoff is additive (writes new files); no destructive rollback is needed.
+- If partially completed, re-running `/kickoff` overwrites all outputs — safe to retry.
+- If a subagent was skipped, re-run `/kickoff` after fixing the root cause to regenerate the missing document.
+
+## Guidelines
+- The dependency order is critical: requirements → (UX + architecture in parallel) → data model → (planner + QA in parallel).
+- **ux-designer + architect MUST be invoked in parallel**: Both subagents only need requirements and have no dependency on each other.
+- **planner + QA MUST be invoked in parallel**: Both subagents have no dependency on each other, so they must be executed as two Task tool calls simultaneously in a single message.
+- Each subagent should receive ALL prior outputs as context for maximum coherence.
+- Do NOT modify subagent outputs after they are written — each agent owns its document.
+- PRD Digest is always generated in Phase 1.5 (no length condition). Individual subagents should not create their own summaries.

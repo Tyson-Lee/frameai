@@ -1,0 +1,100 @@
+---
+name: ship
+description: Finalizes tests/docs/changelog and merges the PR to make it deployment-ready.
+disable-model-invocation: true
+allowed-tools: Read, Glob, Grep, Write, Edit, Task, Bash(bash scripts/checkpoint.sh *), Bash(bash scripts/wt_cleanup.sh *), Bash(bash scripts/registry_edit.sh *), Bash(bash scripts/flock_edit.sh *), Bash(bash scripts/worktree.sh *), Bash(bash scripts/kit_update_check.py *), Bash(python3 scripts/*), Bash(git *), Bash(gh *), Bash(pytest *), Bash(npm *)
+---
+
+{{PREAMBLE}}
+Steps:
+1) Identify PR to merge (current branch or most recent done issue PR).
+2) Ensure tests pass locally and PR checks are green.
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Run: `{{CHECKPOINT_CMD}} --skill ship --phase checks --issue $ARGUMENTS`
+> If exit code ≠ 0: STOP immediately and report the failure. Do NOT proceed.
+
+3) Update docs/README.md; append CHANGELOG.md.
+
+3.5) Ask documenter subagent to review and update project documentation:
+   - Use the Task tool to launch a documenter subagent (agents/documenter.md).
+   - Pass the PR diff summary, list of changed files, and existing docs/ contents as context.
+   - Documenter checks docs/ (README, runbook, troubleshooting, contributing) against the code changes.
+   - If docs are outdated or missing coverage for the changes: update them.
+   - If no doc updates needed: skip silently.
+
+   Update shared files via the registry wrapper:
+   ```bash
+   bash scripts/registry_edit.sh STATUS.md -- bash -c '<update command>'
+   ```
+4) Merge via `gh pr merge` (merge/squash per repo rules) and delete branch.
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Run: `{{CHECKPOINT_CMD}} --skill ship --phase merge --issue $ARGUMENTS`
+> If exit code ≠ 0: STOP immediately and report the failure. Do NOT proceed.
+
+5) Clean up worktree if one exists for this branch.
+   Use the `wt_cleanup.sh` wrapper — it cd's to the main repo root and
+   removes the worktree in a single subshell, so the caller's CWD is
+   never left inside a deleted directory:
+   ```bash
+   bash scripts/wt_cleanup.sh <branch>
+   ```
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Run: `{{CHECKPOINT_CMD}} --skill ship --phase cleanup --issue $ARGUMENTS`
+> If exit code ≠ 0: STOP immediately and report the failure. Do NOT proceed.
+
+6) Post-merge smoke test on main (MANDATORY):
+   ```bash
+   git checkout main && git pull
+   ```
+   - Python: `pytest -q --tb=short`
+   - JS/TS: `npm test`
+   - **Platform gates**: `verify_gates.py` runs automatically via checkpoint
+     (e2e-web, e2e-mobile, api, integration, load — as configured in `docs/test_plan.md`).
+   - If tests or gates fail: alert the user immediately with failing output and suggest `git revert -m 1 <merge_commit>`.
+
+> **CHECKPOINT — MANDATORY — NEVER SKIP**
+> Run: `{{CHECKPOINT_CMD}} --skill ship --phase smoke --issue $ARGUMENTS`
+> If exit code ≠ 0: STOP immediately and report the failure. Do NOT proceed.
+
+7) **Post-ship test gap advisory** (optional, non-blocking):
+   - Identify files changed in the merged PR: `git diff --name-only HEAD~1 HEAD`
+   - Filter to source files only (exclude test files, configs, docs, generated files)
+   - For each changed source file, check if a corresponding test file exists:
+     - Python `src/module.py` → `tests/test_module.py`
+     - JS/TS `src/component.ts` → `src/component.test.ts` or `src/component.spec.ts`
+   - If gaps found, report to user:
+     ```
+     Test coverage gaps detected in shipped code:
+     - src/auth.py → no corresponding test file
+     - src/webhook.py → test exists but may lack coverage for new functions
+     Suggestion: run `/testgen <path>` to generate missing tests.
+     ```
+   - This step is advisory only — it does NOT block the ship or fail the pipeline.
+   - If no gaps found, skip silently.
+
+## Shared Registry Files
+**IMPORTANT**: Never commit `issues.md`, `STATUS.md`, or `CHANGELOG.md` to the feature branch.
+These are registry files managed only on main. Always use `bash scripts/registry_edit.sh <file> -- bash -c '<update command>'` — the wrapper resolves the main repo root internally.
+
+## Error Handling
+- Pre-merge checks (must all pass before merging):
+  1. `gh pr checks <pr>` — all CI checks must be green.
+  2. Local test suite must pass.
+  3. PR must not be in draft state.
+  If any check fails: stop and report which check failed.
+- If `gh pr merge` fails: report the error (e.g., merge conflicts, branch protection rules).
+- If post-merge smoke test fails on main:
+  1. Immediately alert the user with the failing test output.
+  2. Suggest `git revert -m 1 <merge_commit>` to revert the merge.
+  3. Do NOT auto-revert without user confirmation.
+
+## Rollback
+- If merge must be reverted:
+  1. `git revert -m 1 <merge_commit_sha>` on main.
+  2. Push the revert commit.
+  3. Update CHANGELOG.md with a revert entry.
+  4. Update STATUS.md to reflect the reverted state.
+- Branch is already deleted after merge; if rework is needed, create a new branch from the revert.
