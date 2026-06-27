@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 """frame — FrameAI command-line interface.
 
-FrameAI lets a user describe a repetitive task in natural language and
-have an AI team plan, design, implement, test, and document the
-automation end-to-end. The output lands under `automations/<slug>/` as a
-self-contained folder that's shareable like any other library entry.
+FrameAI turns a natural-language description of a repetitive task into a
+reusable Claude Code skill. Each `frame add` produces:
 
-Usage:
-    frame add "<natural-language description of the task>"
-    frame list
-    frame run <slug> [args...]
-    frame share <slug>
+  - skills/<slug>/SKILL.md          # the new slash-command anyone can invoke
+  - skills/<slug>/helpers/          # generated supporting code, if any
+  - automations/<slug>/README.md    # human-facing usage guide
+  - automations/<slug>/input.md     # the original natural-language description
+  - automations/<slug>/before_after.md
+  - automations/<slug>/runs/        # per-invocation archive (created on each run)
 
-`frame add` drives Claude Code headlessly (`claude --print`) — the
-single user input is the description; from there, the kit's agents take
-over until the automation is ready to run.
+`frame run <slug> [--in FILE]... [--image FILE]... [args...]` invokes the
+skill via Claude Code's headless mode and archives the run.
 
-This file is intentionally small (one-file CLI). Look at agents/,
-skills/, and scripts/ for the production work that runs underneath.
+`frame refine <slug> "<change description>"` asks the AI team to evolve the
+skill — preserving its name + interface, adding/changing behavior.
+
+The CLI is intentionally small (~300 LOC) — the heavy lifting lives in
+the kit's agents, skills, scripts, and hooks. See README.md for the full
+pipeline picture.
 """
 
 from __future__ import annotations
@@ -32,29 +34,111 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 AUTOMATIONS = ROOT / "automations"
-PROMPT_TEMPLATE = """\
+SKILLS = ROOT / "skills"
+
+# -----------------------------------------------------------------------------
+# Prompts dispatched to claude --print
+# -----------------------------------------------------------------------------
+
+ADD_PROMPT = """\
 You are FrameAI's autonomous build pipeline. The user has described a
-repetitive task they want to automate. Your job is to plan, design,
-implement, test, and document a working automation that solves it.
+repetitive task they want to automate. Your job is to build a reusable
+Claude Code skill that any teammate can invoke later.
 
 Run the kit's pipeline end-to-end without further prompting:
-  1. /prd {input_path}            — turn the description into a PRD
-  2. /kickoff                     — produce requirements + architecture + issues
-  3. /sprint                      — execute each issue (worktree-isolated)
-  4. /ship                        — finalize the artifacts
+  1. /prd {input_path}             — turn the description into a PRD
+  2. /kickoff                      — produce requirements + architecture + issues
+  3. /sprint                       — execute each issue (worktree-isolated)
+  4. /ship                         — finalize the artifacts
 
-All generated artifacts live under: {output_dir}
-At the end, also write {output_dir}/before_after.md with the user's
-estimated original-task time vs. the automation's runtime.
+The deliverable is **a new skill**, not a one-shot script. Specifically:
 
-The user's description follows in the input file. Do not ask the user
-follow-up questions unless a critical ambiguity blocks structural work.
+  - Create `skills/{slug}/SKILL.md.tmpl` declaring inputs, outputs, and steps.
+    The skill MUST accept these environment variables / arguments at runtime:
+        $FRAMEAI_RUN_INPUTS   absolute path to a directory of input files
+        $FRAMEAI_RUN_OUTPUTS  absolute path to a directory the skill MUST
+                              write its outputs into
+        $FRAMEAI_RUN_TEXT     free-form text arguments from the caller
+    The skill itself only `Read`s from $FRAMEAI_RUN_INPUTS and only `Write`s
+    into $FRAMEAI_RUN_OUTPUTS. No writes outside that directory.
+  - Add `skills/{slug}/helpers/` for any deterministic Python/Bash helpers
+    that should NOT live inside the SKILL prompt (e.g. PDF parsing, table
+    formatting, API clients).
+  - Run `python3 scripts/gen_skills.py` so `skills/{slug}/SKILL.md` is
+    generated alongside the template.
+  - Write `automations/{slug}/README.md` documenting:
+      - one-line purpose
+      - example invocation (`frame run {slug} --in foo.pdf "<text>"`)
+      - what inputs are required vs optional
+      - what outputs will appear under `runs/<ts>/outputs/`
+      - any Limits / honest framing
+  - Write `automations/{slug}/before_after.md` with the user's estimated
+    original-task time vs. the automation's expected runtime.
+
+The user's description is in {input_path}. Do not ask follow-up questions
+unless an ambiguity blocks structural work. Where reasonable defaults exist,
+apply them and note the assumption inline.
+
+Target directory for the skill's runtime outputs (NOT for build artifacts):
+  $FRAMEAI_RUN_OUTPUTS / runs/<timestamp>/outputs/   (set per-run by frame CLI)
 """
+
+REFINE_PROMPT = """\
+You are FrameAI's autonomous refinement pipeline. The user wants to evolve
+an existing skill without changing its name or external interface.
+
+Existing skill: skills/{slug}/SKILL.md(.tmpl)
+Refinement request follows.
+
+Steps:
+  1. Read the existing skill and its helpers.
+  2. Apply the refinement, preserving:
+       - skill name (still `{slug}` after the change)
+       - input/output contract documented in the SKILL frontmatter (UNLESS
+         the user explicitly asks to change it)
+       - existing `runs/` archive directory layout (do NOT rewrite history)
+  3. Update `automations/{slug}/README.md` to reflect the change.
+  4. Append a changelog entry to `automations/{slug}/CHANGELOG.md`
+     (create the file if absent).
+  5. Run `python3 scripts/gen_skills.py` then `python3 -m pytest -q` to
+     confirm nothing regressed.
+
+Refinement request:
+{refinement}
+"""
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
 
 
 def slugify(text: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return (s[:60] or "automation").strip("-")
+
+
+def timestamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")
+
+
+def find_claude() -> str | None:
+    return shutil.which("claude")
+
+
+def write_input_md(target: Path, description: str) -> Path:
+    input_path = target / "input.md"
+    input_path.write_text(
+        f"# Automation input\n\n"
+        f"_Created: {datetime.now(timezone.utc).isoformat(timespec='seconds')}_\n\n"
+        f"## User description\n\n{description}\n",
+        encoding="utf-8",
+    )
+    return input_path
+
+
+# -----------------------------------------------------------------------------
+# Commands
+# -----------------------------------------------------------------------------
 
 
 def cmd_add(args: argparse.Namespace) -> int:
@@ -64,124 +148,317 @@ def cmd_add(args: argparse.Namespace) -> int:
         return 2
 
     slug = args.slug or slugify(description)
-    target = AUTOMATIONS / slug
-    if target.exists() and not args.force:
+    auto_dir = AUTOMATIONS / slug
+    skill_dir = SKILLS / slug
+
+    if (auto_dir.exists() or skill_dir.exists()) and not args.force:
         print(
-            f"frame add: automations/{slug}/ already exists. Use --force to overwrite "
-            f"or pass --slug to choose a different name.",
+            f"frame add: skills/{slug}/ or automations/{slug}/ already exists. "
+            f"Use --slug to choose a different name or --force to overwrite.",
             file=sys.stderr,
         )
         return 2
 
-    target.mkdir(parents=True, exist_ok=True)
-    input_path = target / "input.md"
-    input_path.write_text(
-        f"# Automation: {slug}\n\n"
-        f"_Created: {datetime.now(timezone.utc).isoformat(timespec='seconds')}_\n\n"
-        f"## User description\n\n{description}\n",
-        encoding="utf-8",
-    )
-
-    output_dir = target / "generated"
-    output_dir.mkdir(exist_ok=True)
-
-    prompt = PROMPT_TEMPLATE.format(
+    auto_dir.mkdir(parents=True, exist_ok=True)
+    input_path = write_input_md(auto_dir, description)
+    prompt = ADD_PROMPT.format(
+        slug=slug,
         input_path=input_path.relative_to(ROOT),
-        output_dir=output_dir.relative_to(ROOT),
     )
 
-    print(f"FrameAI: created automations/{slug}/")
-    print(f"FrameAI: dispatching Claude Code (headless) — no further input needed.")
+    print(f"FrameAI: scaffolded automations/{slug}/")
+    print(f"FrameAI: dispatching Claude Code (headless build pipeline)…")
     print()
-
-    if shutil.which("claude") is None:
-        print(
-            "FrameAI: `claude` CLI not found on PATH. Install Claude Code, "
-            "then re-run `frame add --resume` (or run `claude` manually in this repo).",
-            file=sys.stderr,
-        )
-        return 3
 
     if args.dry_run:
         print("--- prompt (--dry-run) ---")
         print(prompt)
         return 0
 
-    completed = subprocess.run(
-        ["claude", "--print", prompt],
-        cwd=ROOT,
-    )
-    return completed.returncode
+    if find_claude() is None:
+        print(
+            "FrameAI: `claude` CLI not found on PATH. Install Claude Code first.",
+            file=sys.stderr,
+        )
+        return 3
+
+    return subprocess.run(["claude", "--print", prompt], cwd=ROOT).returncode
 
 
 def cmd_list(_args: argparse.Namespace) -> int:
     if not AUTOMATIONS.exists():
         print("No automations yet. Run: frame add \"<description>\"")
         return 0
-    rows = []
+    rows: list[tuple[str, str, int]] = []
     for d in sorted(AUTOMATIONS.iterdir()):
         if not d.is_dir():
             continue
-        generated = d / "generated"
-        run_sh = d / "run.sh"
-        status = "ready" if run_sh.exists() else ("built" if generated.exists() else "draft")
-        rows.append((d.name, status))
+        skill = SKILLS / d.name / "SKILL.md"
+        runs_dir = d / "runs"
+        run_count = (
+            len([r for r in runs_dir.iterdir() if r.is_dir()])
+            if runs_dir.exists()
+            else 0
+        )
+        if skill.exists():
+            status = "ready"
+        elif (d / "input.md").exists():
+            status = "draft"
+        else:
+            status = "empty"
+        rows.append((d.name, status, run_count))
     if not rows:
         print("No automations yet. Run: frame add \"<description>\"")
         return 0
-    width = max(len(name) for name, _ in rows)
-    for name, status in rows:
-        print(f"  {name:<{width}}  [{status}]")
+    width_name = max(len(n) for n, _, _ in rows)
+    print(f"  {'NAME':<{width_name}}  STATUS  RUNS")
+    for name, status, runs in rows:
+        print(f"  {name:<{width_name}}  {status:<6}  {runs}")
     return 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    target = AUTOMATIONS / args.name
-    run_sh = target / "run.sh"
-    if not run_sh.exists():
+    slug = args.name
+    skill = SKILLS / slug / "SKILL.md"
+    if not skill.is_file():
         print(
-            f"frame run: automations/{args.name}/run.sh not found. "
-            "Has the automation finished building? Check `frame list`.",
+            f"frame run: skills/{slug}/SKILL.md not found. "
+            f"Build first with: frame add \"<description>\"",
             file=sys.stderr,
         )
         return 2
-    return subprocess.run(["bash", str(run_sh)] + list(args.rest), cwd=target).returncode
+
+    auto_dir = AUTOMATIONS / slug
+    auto_dir.mkdir(parents=True, exist_ok=True)
+    run_dir = auto_dir / "runs" / timestamp()
+    inputs_dir = run_dir / "inputs"
+    outputs_dir = run_dir / "outputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy file inputs (--in) and image inputs (--image) into runs/<ts>/inputs/
+    copied: list[tuple[Path, str]] = []  # (target_path, role)
+    for src in (args.input or []):
+        srcp = Path(src).expanduser().resolve()
+        if not srcp.is_file():
+            print(f"frame run: input file not found: {src}", file=sys.stderr)
+            return 2
+        dst = inputs_dir / srcp.name
+        shutil.copy2(srcp, dst)
+        copied.append((dst, "file"))
+    for src in (args.image or []):
+        srcp = Path(src).expanduser().resolve()
+        if not srcp.is_file():
+            print(f"frame run: image file not found: {src}", file=sys.stderr)
+            return 2
+        dst = inputs_dir / srcp.name
+        shutil.copy2(srcp, dst)
+        copied.append((dst, "image"))
+
+    text_arg = " ".join(args.rest) if args.rest else ""
+
+    inputs_summary = (
+        "\n".join(f"  - {role}: {p.relative_to(ROOT)}" for p, role in copied)
+        or "  (no file inputs)"
+    )
+
+    prompt_lines = [
+        f"Invoke the `{slug}` skill (skills/{slug}/SKILL.md).",
+        "",
+        "Inputs:",
+        inputs_summary,
+        "",
+        f"Text arguments: {text_arg or '(none)'}",
+        "",
+        f"Write ALL outputs under: {outputs_dir.relative_to(ROOT)}",
+        f"Do NOT write outside that directory.",
+        f"Inputs are at: {inputs_dir.relative_to(ROOT)}",
+        "",
+        "Execute the skill end-to-end without follow-up questions where "
+        "reasonable defaults exist. After completion, list every file you "
+        "wrote (one per line, relative to repo root).",
+    ]
+    prompt = "\n".join(prompt_lines)
+
+    log_path = run_dir / "log.txt"
+    prompt_path = run_dir / "prompt.txt"
+    prompt_path.write_text(prompt, encoding="utf-8")
+
+    print(f"FrameAI: starting run → {run_dir.relative_to(ROOT)}/")
+    print(f"FrameAI: dispatching Claude Code…")
+
+    if args.dry_run:
+        print("--- prompt (--dry-run) ---")
+        print(prompt)
+        return 0
+
+    if find_claude() is None:
+        print(
+            "FrameAI: `claude` CLI not found on PATH. Install Claude Code first.",
+            file=sys.stderr,
+        )
+        return 3
+
+    env_intro = (
+        f"FRAMEAI_RUN_INPUTS={inputs_dir}\n"
+        f"FRAMEAI_RUN_OUTPUTS={outputs_dir}\n"
+        f"FRAMEAI_RUN_TEXT={text_arg!r}\n"
+    )
+    log_path.write_text(env_intro + "\n--- claude --print stdout ---\n", encoding="utf-8")
+
+    with log_path.open("a", encoding="utf-8") as logf:
+        proc = subprocess.run(
+            ["claude", "--print", prompt],
+            cwd=ROOT,
+            stdout=logf,
+            stderr=subprocess.STDOUT,
+        )
+
+    listed_outputs = sorted(outputs_dir.rglob("*"))
+    listed_outputs = [p for p in listed_outputs if p.is_file()]
+    print()
+    if listed_outputs:
+        print(f"FrameAI: {len(listed_outputs)} output file(s):")
+        for p in listed_outputs:
+            print(f"  - {p.relative_to(ROOT)}")
+    else:
+        print(
+            f"FrameAI: no output files were written under {outputs_dir.relative_to(ROOT)}. "
+            f"Check log: {log_path.relative_to(ROOT)}"
+        )
+    return proc.returncode
+
+
+def cmd_refine(args: argparse.Namespace) -> int:
+    slug = args.name
+    skill = SKILLS / slug / "SKILL.md"
+    if not skill.is_file():
+        print(
+            f"frame refine: skills/{slug}/SKILL.md not found. "
+            f"Build first with: frame add \"<description>\"",
+            file=sys.stderr,
+        )
+        return 2
+
+    refinement = args.refinement.strip()
+    if not refinement:
+        print("frame refine: refinement description must be non-empty", file=sys.stderr)
+        return 2
+
+    prompt = REFINE_PROMPT.format(slug=slug, refinement=refinement)
+
+    print(f"FrameAI: refining skills/{slug}/…")
+    if args.dry_run:
+        print("--- prompt (--dry-run) ---")
+        print(prompt)
+        return 0
+
+    if find_claude() is None:
+        print(
+            "FrameAI: `claude` CLI not found on PATH. Install Claude Code first.",
+            file=sys.stderr,
+        )
+        return 3
+
+    return subprocess.run(["claude", "--print", prompt], cwd=ROOT).returncode
 
 
 def cmd_share(args: argparse.Namespace) -> int:
-    target = AUTOMATIONS / args.name
-    if not target.is_dir():
-        print(f"frame share: no such automation {args.name!r}", file=sys.stderr)
+    slug = args.name
+    paths = [AUTOMATIONS / slug, SKILLS / slug]
+    if not any(p.exists() for p in paths):
+        print(f"frame share: no such automation {slug!r}", file=sys.stderr)
         return 2
-    subprocess.run(["git", "add", str(target.relative_to(ROOT))], cwd=ROOT, check=True)
-    msg = args.message or f"feat(automations): add {args.name}"
+    for p in paths:
+        if p.exists():
+            subprocess.run(["git", "add", str(p.relative_to(ROOT))], cwd=ROOT, check=True)
+    msg = args.message or f"feat(automations): add {slug}"
     subprocess.run(["git", "commit", "-m", msg], cwd=ROOT, check=True)
-    print(f"FrameAI: committed automations/{args.name}/")
+    print(f"FrameAI: committed skills/{slug}/ + automations/{slug}/")
     print("Push with: git push  (after `git remote add origin ...`)")
     return 0
+
+
+# -----------------------------------------------------------------------------
+# CLI surface
+# -----------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="frame",
         description="FrameAI — automation of automation. "
-        "Describe a repetitive task; AI plans, builds, tests, and documents it.",
+        "Describe a repetitive task; AI plans, builds, tests, and documents it "
+        "as a reusable Claude Code skill anyone can invoke.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    a = sub.add_parser("add", help="Add a new automation from a natural-language description.")
+    a = sub.add_parser(
+        "add",
+        help="Build a new automation skill from a natural-language description.",
+    )
     a.add_argument("description", help="One paragraph describing the repetitive task.")
     a.add_argument("--slug", help="Override the generated slug.")
-    a.add_argument("--force", action="store_true", help="Overwrite an existing automation folder.")
-    a.add_argument("--dry-run", action="store_true", help="Print the dispatch prompt and exit without calling claude.")
+    a.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing automation/skill of the same name.",
+    )
+    a.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the dispatch prompt without invoking claude.",
+    )
     a.set_defaults(func=cmd_add)
 
-    sub.add_parser("list", help="List all automations and their build status.").set_defaults(func=cmd_list)
+    sub.add_parser(
+        "list",
+        help="List automations with their build status and run count.",
+    ).set_defaults(func=cmd_list)
 
-    r = sub.add_parser("run", help="Run a built automation.")
+    r = sub.add_parser(
+        "run",
+        help="Run a built automation. Archives inputs + outputs under runs/<ts>/.",
+    )
     r.add_argument("name", help="Automation slug (see `frame list`).")
-    r.add_argument("rest", nargs="*", help="Extra args forwarded to the automation's run.sh.")
+    r.add_argument(
+        "--in",
+        dest="input",
+        action="append",
+        metavar="PATH",
+        help="Attach a file as input (CSV/JSON/PDF/.md/...). Repeatable.",
+    )
+    r.add_argument(
+        "--image",
+        action="append",
+        metavar="PATH",
+        help="Attach an image (PNG/JPG) as input. Repeatable. "
+             "Claude reads images natively via the multimodal model.",
+    )
+    r.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the dispatch prompt without invoking claude.",
+    )
+    r.add_argument(
+        "rest",
+        nargs="*",
+        help="Free-form text arguments passed to the skill.",
+    )
     r.set_defaults(func=cmd_run)
+
+    rf = sub.add_parser(
+        "refine",
+        help="Evolve an existing skill without changing its name or interface.",
+    )
+    rf.add_argument("name", help="Automation slug to refine.")
+    rf.add_argument("refinement", help="Natural-language description of the change.")
+    rf.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the dispatch prompt without invoking claude.",
+    )
+    rf.set_defaults(func=cmd_refine)
 
     s = sub.add_parser("share", help="Stage + commit an automation for sharing.")
     s.add_argument("name")
