@@ -21,26 +21,33 @@
 
 ### 첫 설치 — 한 번만 (터미널 없이)
 
-**방법 A — Claude Code 채팅창에서 설치 (권장, 현장 엔지니어)**
+**방법 A — Claude Code 채팅창에서 한 줄 paste (권장, 현장 엔지니어)**
 
-1. Claude Code 앱 실행 (사내 사용자에게 이미 설치되어 있다고 가정)
-2. 채팅창에 한 줄: *"FrameAI 설치해줘"*
-3. Claude 가 다음 명령을 자체 Bash 도구로 실행:
+1. Claude Code 앱 실행 (Anthropic 의 일반 설치 한 번이면 됨)
+2. 사내 공지 (Slack/email/wiki) 에서 한 줄을 복사:
    ```
-   curl -fsSL https://<사내-frameai-호스트>/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/doyulee/frameai/main/install.sh | bash
    ```
-4. 끝. 설치된 폴더 (`~/frameai/`) 를 Claude Code 에서 열기.
+3. 채팅창에 paste 하고 *"이거 실행해줘"* 라고 추가
+4. Claude 가 자체 Bash 도구로 실행 → 5-10초 후 완료
+5. 설치된 폴더 (`~/frameai/`) 를 Claude Code 에서 열기
+
+> **정직히**: *"FrameAI 설치해줘"* 한 마디만으로 작동하려면 FrameAI 가
+> Claude 의 학습 데이터에 포함되어야 합니다 (수개월~연 단위). 현재는
+> 사용자가 install URL 을 직접 paste 해야 합니다. 사내 공지 한 번 뿌리는
+> 게 가장 간단한 운영 방안.
 
 **방법 B — 터미널 직접 (자동화 작성자 / IT)**
 
 ```bash
-curl -fsSL https://<사내-frameai-호스트>/install.sh | bash
-# 또는 위치 지정:
-FRAMEAI_HOME=~/my-frameai bash install.sh
+curl -fsSL https://raw.githubusercontent.com/doyulee/frameai/main/install.sh | bash
+# 또는 위치 / 사내 미러 지정:
+FRAMEAI_HOME=~/my-frameai \
+  FRAMEAI_REPO_URL=https://<사내-git>/frameai.git \
+  bash install.sh
 ```
 
-`install.sh` 가 자동으로 git clone + `setup.sh` 까지 실행합니다. 별도
-명령 불필요.
+`install.sh` 가 자동으로 git clone + `setup.sh` 까지 실행합니다.
 
 ### 현장 엔지니어 (CLI 안 침)
 
