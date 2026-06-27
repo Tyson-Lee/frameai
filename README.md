@@ -9,7 +9,24 @@
 파일·이미지·텍스트 어떤 입력이든 받아 결과 파일을 그 회의 `runs/<시각>/`
 폴더에 영구 보관합니다.
 
-## Quickstart
+## 두 가지 사용 흐름
+
+| 사용자 | 어떻게 호출 | 언제 |
+|---|---|---|
+| **현장 엔지니어** | Claude Code 채팅창에 파일 드래그 + 자연어 (또는 `/<스킬명>`) | 일상 사용 |
+| **자동화 작성자 (1인)** | `frame add` CLI 한 줄 | 새 자동화 만들 때 |
+| **CI / cron / 배치** | `frame run --in ...` CLI | 스케줄링 / 외부 시스템 연동 |
+
+같은 자동화를 두 UX 모두로 호출할 수 있습니다 — 내부적으로 같은 `SKILL.md` 를 호출하기 때문입니다.
+
+### 현장 엔지니어 (CLI 안 침)
+
+1. **frame 폴더에서 `claude` 실행** (Claude Code 앱이 자동으로 frameai 의 `.claude/` 발견)
+2. 화면에 spec.pdf / defect.png 등을 **드래그**
+3. 채팅창에 자연어로: *"이 변경 사항으로 ECN 작성해 줘"* (또는 `/ecn-writer M1 CD 22→18nm`)
+4. 결과 파일이 인라인 표시 + `automations/ecn-writer/runs/<시각>/outputs/` 에 자동 저장
+
+### 자동화 작성자 (CLI Quickstart)
 
 ```bash
 # 1. 새 자동화 만들기 (자연어 한 문단)
@@ -33,6 +50,25 @@ ls automations/ecn-writer/runs/
 git push
 # 동료: git pull → 즉시 /ecn-writer 사용 가능
 ```
+
+### Claude Code 가 스킬을 어떻게 찾는가
+
+frameai repo 안의 `.claude/` 디렉토리가 Claude Code 의 표준 발견 경로입니다.
+
+```
+frameai/.claude/
+├── skills/     → ../skills    (심볼릭 링크)
+├── agents/    → ../agents     (심볼릭 링크)
+├── hooks/     → ../project/.claude/hooks
+└── settings.json              (fallbackModel + 훅 wiring 포함)
+```
+
+이 구조 덕분에:
+- `cd frameai && claude` 하면 즉시 10개 vendored skill (`/sprint`, `/prd` 등)
+  과 13개 런타임 built-in (`/code-review`, `/deep-research` 등) 모두 노출
+- 새로 빌드된 `skills/<slug>/` 도 자동 발견 (별도 install / register 불필요)
+- 별도 "프로젝트 등록" 작업 없음 — Claude Code 앱은 폴더 자체를 프로젝트로
+  인식. cmux/Desktop 앱은 Recent Projects 사이드바에서 한 번 열면 등록
 
 `frame add` 와 `frame run` 둘 다 Claude Code 를 헤드리스 (`claude --print`)
 로 호출합니다. **사용자 추가 입력 없이** 전체 빌드/실행이 진행되고, 진행
