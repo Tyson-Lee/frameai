@@ -3,7 +3,7 @@
 #
 # Usage (inside Claude Code chat):
 #   사용자: "FrameAI 설치해줘"
-#   Claude: (runs)  curl -fsSL https://raw.githubusercontent.com/doyulee/frameai/main/install.sh | bash
+#   Claude: (runs)  curl -fsSL https://raw.githubusercontent.com/Tyson-Lee/frameai/main/install.sh | bash
 #
 # Usage (terminal direct):
 #   curl -fsSL <URL>/install.sh | bash
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 TARGET="${FRAMEAI_HOME:-$HOME/frameai}"
-REPO_URL="${FRAMEAI_REPO_URL:-https://github.com/doyulee/frameai.git}"
+REPO_URL="${FRAMEAI_REPO_URL:-https://github.com/Tyson-Lee/frameai.git}"
 BRANCH="${FRAMEAI_BRANCH:-main}"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }

@@ -26,7 +26,7 @@
 1. Claude Code 앱 실행 (Anthropic 의 일반 설치 한 번이면 됨)
 2. 사내 공지 (Slack/email/wiki) 에서 한 줄을 복사:
    ```
-   curl -fsSL https://raw.githubusercontent.com/doyulee/frameai/main/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/Tyson-Lee/frameai/main/install.sh | bash
    ```
 3. 채팅창에 paste 하고 *"이거 실행해줘"* 라고 추가
 4. Claude 가 자체 Bash 도구로 실행 → 5-10초 후 완료
@@ -40,7 +40,7 @@
 **방법 B — 터미널 직접 (자동화 작성자 / IT)**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/doyulee/frameai/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Tyson-Lee/frameai/main/install.sh | bash
 # 또는 위치 / 사내 미러 지정:
 FRAMEAI_HOME=~/my-frameai \
   FRAMEAI_REPO_URL=https://<사내-git>/frameai.git \
