@@ -46,11 +46,23 @@ You are FrameAI's autonomous build pipeline. The user has described a
 repetitive task they want to automate. Your job is to build a reusable
 Claude Code skill that any teammate can invoke later.
 
-Run the kit's pipeline end-to-end without further prompting:
+Run the kit's pipeline WITHOUT shipping. Stop after /sprint — do NOT
+call /ship. Do NOT run `git push`. Leave all generated artifacts in
+the working tree so the user can review before publishing manually
+via `./frame share <slug>` or `./frame share <slug> --push`.
+
+Pipeline:
   1. /prd {input_path}             — turn the description into a PRD
   2. /kickoff                      — produce requirements + architecture + issues
   3. /sprint                       — execute each issue (worktree-isolated)
-  4. /ship                         — finalize the artifacts
+
+After /sprint, also generate **1-2 sample input files** under
+`automations/{slug}/samples/` (e.g. `sample-1.txt`, `sample-2.csv`) so
+the user can verify the skill with one line:
+    ./frame run {slug} --in automations/{slug}/samples/sample-1.txt "<test text>"
+Each sample should be small (≤ 50 lines) and representative of a real
+input shape the skill expects. Do NOT include any sensitive or
+confidential data — pure synthetic content.
 
 The deliverable is **a new skill**, not a one-shot script. Specifically:
 
@@ -469,7 +481,23 @@ def cmd_share(args: argparse.Namespace) -> int:
     msg = args.message or f"feat(automations): add {slug}"
     subprocess.run(["git", "commit", "-m", msg], cwd=ROOT, check=True)
     print(f"FrameAI: committed skills/{slug}/ + automations/{slug}/")
-    print("Push with: git push  (after `git remote add origin ...`)")
+    if args.push:
+        if not os.environ.get("GH_TOKEN") and not os.environ.get("FRAMEAI_DISABLE_TOKEN_CHECK"):
+            print(
+                "frame share --push: GH_TOKEN env var not set. Either:\n"
+                "  (a) export GH_TOKEN=<your-PAT> then re-run frame share --push, or\n"
+                "  (b) set up SSH key for github.com:Tyson-Lee and use plain `git push`.",
+                file=sys.stderr,
+            )
+            return 4
+        rc = subprocess.run(["git", "push"], cwd=ROOT).returncode
+        if rc == 0:
+            print(f"FrameAI: pushed to origin.")
+        return rc
+    print(
+        "Push next with: GH_TOKEN=<your-PAT> git push   "
+        "(or rerun: frame share <slug> --push)"
+    )
     return 0
 
 
@@ -557,6 +585,12 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("share", help="Stage + commit an automation for sharing.")
     s.add_argument("name")
     s.add_argument("-m", "--message", help="Override the default commit message.")
+    s.add_argument(
+        "--push",
+        action="store_true",
+        help="Also `git push` after committing. Requires GH_TOKEN env var "
+             "(per-repo credential helper reads it for Tyson-Lee identity).",
+    )
     s.set_defaults(func=cmd_share)
 
     u = sub.add_parser(

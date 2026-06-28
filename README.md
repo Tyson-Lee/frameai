@@ -67,6 +67,22 @@ FRAMEAI_HOME=~/my-frameai \
 
 (터미널을 쓰는 IT/자동화 작성자는 `./frame update` 도 동일하게 작동합니다.)
 
+### 자동화 작성자 — push 인증 (CLI 한 번 셋업)
+
+`setup.sh` 가 자동으로 per-repo git credential helper 를 등록합니다.
+이후 모든 push 는 `GH_TOKEN` 환경변수로:
+
+```bash
+export GH_TOKEN=<your-PAT>
+git push                          # 평범한 push
+./frame share <slug> --push       # 커밋 + push 한 번에
+```
+
+PAT 영구 보관이 부담스러우면:
+- `~/.zshrc` (또는 `.bashrc`) 에 `export GH_TOKEN=...` 추가
+- 또는 SSH key 셋업 후 remote URL 을 `git@github.com:Tyson-Lee/frameai.git`
+  로 변경 (장기 권장)
+
 ### 자동화 작성자 (CLI Quickstart)
 
 ```bash
