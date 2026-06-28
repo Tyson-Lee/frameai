@@ -64,6 +64,29 @@ Each sample should be small (≤ 50 lines) and representative of a real
 input shape the skill expects. Do NOT include any sensitive or
 confidential data — pure synthetic content.
 
+**Visibility on main branch — mandatory final step.** After /sprint
+completes, ensure the following files exist on the main branch
+working tree (not stuck in per-issue worktree branches):
+
+  - skills/{slug}/SKILL.md.tmpl
+  - skills/{slug}/SKILL.md         (run `python3 scripts/gen_skills.py`)
+  - skills/{slug}/helpers/         (if any deterministic helpers)
+  - automations/{slug}/input.md
+  - automations/{slug}/README.md
+  - automations/{slug}/before_after.md
+  - automations/{slug}/samples/sample-1.*  (at minimum)
+
+Run `git status` from the main branch and confirm each file appears as
+modified/untracked. If /sprint left them on worktree branches, copy
+them across using `git merge --squash <branch>` (then `git reset` to
+unstage so changes remain in working tree) OR manually copy via
+`git show <branch>:<path> > <path>`. Clean up the worktrees with
+`bash scripts/wt_cleanup.sh <branch>` after copying.
+
+Do NOT call /ship. Do NOT `git push`. Do NOT `git commit` the new
+files — the user reviews them, then explicitly runs
+`./frame share {slug}` (or `./frame share {slug} --push`) to publish.
+
 The deliverable is **a new skill**, not a one-shot script. Specifically:
 
   - Create `skills/{slug}/SKILL.md.tmpl` declaring inputs, outputs, and steps.

@@ -22,6 +22,12 @@ Thumbs.db
 .claude-kit/freeze-dir.txt
 .claude-kit/
 
+# .claude/settings.local.json is normally per-user (gitignored by the
+# user's global git ignore), but FrameAI commits its permission allowlist
+# so teammates inherit the same Bash/Write/SlashCommand grants and the
+# build pipeline doesn't hang on the first permission prompt.
+!.claude/settings.local.json
+
 # Worktrees (not committed)
 .worktrees/
 
@@ -31,6 +37,13 @@ docs/references/research/*.meta.json
 docs/references/research/*.txt
 docs/.review/
 docs/.verify/
+
+# Each engineer's per-invocation FrameAI archive stays local —
+# do NOT auto-share work results across the team. Only the skill
+# definition (skills/<slug>/) and the automation README + samples
+# are shared. Audit/replay state lives only on the runner's machine.
+# (To override for a specific shareable run, `git add -f` it explicitly.)
+automations/*/runs/
 
 # Local secrets (never)
 .env
