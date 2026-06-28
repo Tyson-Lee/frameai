@@ -25,6 +25,7 @@ pipeline picture.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -54,13 +55,38 @@ Run the kit's pipeline end-to-end without further prompting:
 The deliverable is **a new skill**, not a one-shot script. Specifically:
 
   - Create `skills/{slug}/SKILL.md.tmpl` declaring inputs, outputs, and steps.
-    The skill MUST accept these environment variables / arguments at runtime:
-        $FRAMEAI_RUN_INPUTS   absolute path to a directory of input files
-        $FRAMEAI_RUN_OUTPUTS  absolute path to a directory the skill MUST
-                              write its outputs into
-        $FRAMEAI_RUN_TEXT     free-form text arguments from the caller
-    The skill itself only `Read`s from $FRAMEAI_RUN_INPUTS and only `Write`s
-    into $FRAMEAI_RUN_OUTPUTS. No writes outside that directory.
+    The skill MUST support a **dual-mode invocation contract** so that
+    `frame run` (CLI batch) and chat-based slash-command invocation both
+    produce the same archive layout:
+
+    ### Mode A — CLI batch (frame run sets env vars)
+    The following environment variables are set by the `frame` CLI:
+        $FRAMEAI_RUN_INPUTS    absolute path to inputs/ directory
+        $FRAMEAI_RUN_OUTPUTS   absolute path to outputs/ directory the
+                               skill MUST write its outputs into
+        $FRAMEAI_RUN_TEXT      free-form text arguments from the caller
+        $FRAMEAI_RUN_MODE=cli
+    The skill uses these paths directly. Bash tool calls reference
+    `$FRAMEAI_RUN_INPUTS` / `$FRAMEAI_RUN_OUTPUTS` as shell variables.
+
+    ### Mode B — Chat invocation (user typed /{slug} or natural language)
+    No env vars are set. The skill detects this (env var is empty or not
+    set) and self-bootstraps:
+        1. Compute `ts = <current UTC ISO timestamp, slashes→hyphens>`
+        2. `runs_dir = automations/{slug}/runs/<ts>/`
+        3. Create `runs_dir/inputs/` and `runs_dir/outputs/`
+        4. For any files the user dropped into chat or referenced, copy
+           them into `runs_dir/inputs/` via Read+Write
+        5. Write all outputs to `runs_dir/outputs/` (same as Mode A)
+        6. Set internal vars to the same names as Mode A would have, so
+           the rest of the skill logic is mode-agnostic.
+
+    The skill itself ONLY reads from inputs/ and ONLY writes into
+    outputs/. No writes outside the run directory.
+
+    After completion (both modes), the skill MUST print the list of
+    output file paths so the user can open them in Claude Code (chat) or
+    via their file browser.
   - Add `skills/{slug}/helpers/` for any deterministic Python/Bash helpers
     that should NOT live inside the SKILL prompt (e.g. PDF parsing, table
     formatting, API clients).
@@ -78,9 +104,6 @@ The deliverable is **a new skill**, not a one-shot script. Specifically:
 The user's description is in {input_path}. Do not ask follow-up questions
 unless an ambiguity blocks structural work. Where reasonable defaults exist,
 apply them and note the assumption inline.
-
-Target directory for the skill's runtime outputs (NOT for build artifacts):
-  $FRAMEAI_RUN_OUTPUTS / runs/<timestamp>/outputs/   (set per-run by frame CLI)
 """
 
 REFINE_PROMPT = """\
@@ -299,10 +322,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
         return 3
 
+    env = {
+        **os.environ,
+        "FRAMEAI_RUN_INPUTS": str(inputs_dir.resolve()),
+        "FRAMEAI_RUN_OUTPUTS": str(outputs_dir.resolve()),
+        "FRAMEAI_RUN_TEXT": text_arg,
+        "FRAMEAI_RUN_MODE": "cli",
+    }
     env_intro = (
-        f"FRAMEAI_RUN_INPUTS={inputs_dir}\n"
-        f"FRAMEAI_RUN_OUTPUTS={outputs_dir}\n"
-        f"FRAMEAI_RUN_TEXT={text_arg!r}\n"
+        f"FRAMEAI_RUN_INPUTS={env['FRAMEAI_RUN_INPUTS']}\n"
+        f"FRAMEAI_RUN_OUTPUTS={env['FRAMEAI_RUN_OUTPUTS']}\n"
+        f"FRAMEAI_RUN_TEXT={env['FRAMEAI_RUN_TEXT']!r}\n"
+        f"FRAMEAI_RUN_MODE=cli\n"
     )
     log_path.write_text(env_intro + "\n--- claude --print stdout ---\n", encoding="utf-8")
 
@@ -312,6 +343,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             cwd=ROOT,
             stdout=logf,
             stderr=subprocess.STDOUT,
+            env=env,
         )
 
     listed_outputs = sorted(outputs_dir.rglob("*"))
