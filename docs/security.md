@@ -136,7 +136,58 @@ automations/<slug>/runs/<UTC-timestamp>/
 - **무엇**: `prompt.txt` + `inputs/` 로 입력 + `outputs/` 로 결과 확인
 - **AI 가 무엇을 봤는가**: `log.txt` 에 모델 응답 + 도구 호출 전체 기록
 
-## 6. 보안 사고 시 대응
+## 6. Permission allowlist 정책 (`.claude/settings.local.json`)
+
+FrameAI 의 `frame add` 빌드 파이프라인은 inner `claude --print` 세션을
+띄우는데, 첫 도구 호출에서 권한 프롬프트가 뜨면 외부 세션이 hang 합니다.
+이를 방지하기 위해 `.claude/settings.local.json` 에 사전 허용 도구 목록
+을 commit 했습니다. 보안 원칙:
+
+- **읽기 도구는 광범위 허용** — Read, Glob, Grep, Task, SlashCommand,
+  WebFetch, WebSearch
+- **쓰기 도구는 광범위 허용** (훅이 catch 함) — Write, Edit, MultiEdit
+- **Bash 는 패턴별 한정**:
+  - `git *` — 빌드 중 worktree 생성/merge 필요
+  - `gh repo view*`, `gh pr view/list*`, `gh issue view/list*`,
+    `gh api repos/*/contents/*`, `gh auth status*` — **읽기 전용**.
+    `gh repo delete`, `gh pr close`, `gh release delete` 같은 쓰기 명령
+    의도적으로 차단 (`GH_TOKEN` 셸에 있을 때 Tyson-Lee 계정 보호)
+  - `python3 scripts/*` + `python3 -m pytest *` — 임의 Python 코드 실행
+    금지, kit 내부 스크립트만
+  - `bash scripts/*` — kit checkpoint/worktree 헬퍼
+  - `./frame *`, `./setup.sh*` — FrameAI 자체 CLI
+  - `mkdir`, `ls`, `cat`, `head`, `tail`, `grep`, `find`, `touch`,
+    `cp`, `mv`, `chmod`, `echo`, `printf` — 안전 파일 시스템 명령
+- **명시적으로 차단된 패턴**: `rm`, `dd`, `mkfs`, `Bash(*)`,
+  `Bash(gh *)` 와일드카드, `Bash(python3 *)` 와일드카드 — 일부는
+  dangerous_command_guard 훅이 추가 차단
+
+**빌드 후 정리 권장**: 빌드가 완료되고 일상 작업으로 전환 시, 위
+allowlist 를 더 좁은 일상용 set 으로 다시 commit. 또는 직접 일일이
+prompt 받는 일반 모드로 전환.
+
+## 7. 빌드 직전 보안 점검 (2026-06-28 수행)
+
+첫 `frame add` 빌드 직전에 다음 점검을 거쳤습니다:
+
+| 점검 항목 | 결과 |
+|---|---|
+| `Bash(gh *)` 광범위 권한 | ❌ 차단 → 읽기 전용 패턴으로 한정 |
+| `Bash(python3 *)` 광범위 권한 | ❌ 차단 → `scripts/*` 와 `pytest` 만 |
+| `runs/` 디렉토리 자동 공유 | ❌ 차단 → `.gitignore` 추가 |
+| `.claude/settings.local.json` 의도된 commit | ✅ git ignore 글로벌 규칙 negate, 팀 동기화 보장 |
+| secret_guard / dangerous_command_guard 훅 | ✅ PreToolUse 활성 |
+| 인너 세션 권한 hang 위험 | ✅ allowlist 사전 부여 |
+| /sprint 산출물 main 가시성 | ✅ ADD_PROMPT 에 명시적 절차 |
+| PAT 처리 | ⚠️ env var only (`.git/config` 잔류 없음). 빌드 후 revoke 예정 |
+
+**미해결 (Samsung production 배포 시 추가 필요)**:
+- 빌드 후 broad allowlist 정리 (운영 단계 권한 더 좁힘)
+- install.sh 공급망 — 커밋 해시 핀 + 사내 git mirror 라우팅
+- AI 가 작성한 스킬 자체의 보안 리뷰 워크플로 (skill 별 `allowed-tools`
+  최소 권한 검증, helpers/ 의 외부 호출 audit)
+
+## 8. 보안 사고 시 대응
 
 1. 즉시 `git revert <commit>` 으로 문제 자동화/입력 commit 되돌리기
 2. `automations/<slug>/runs/` 의 영향 받은 run 디렉토리 격리 (별도 압축
