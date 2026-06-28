@@ -187,6 +187,31 @@ FrameAI 가 단일 작성자 → 팀 → 조직 라이브러리로 진화하기 
   필요 없이 자연어 한 마디로 설치 가능. 현재는 사내 공지 한 줄을
   복사-paste 하는 운영 방식이 가장 현실적
 
+### 마일스톤 4 — 멀티 클라이언트 (MCP 서버화, 6-12 개월)
+
+현재 FrameAI 는 Claude Code 의 skills / agents / hooks / 헤드리스 모드
+위에서 동작합니다. 사용자가 다른 AI 클라이언트 (ChatGPT 데스크톱,
+Cursor, Continue, Cline 등) 를 선호해도 같은 자동화 라이브러리에
+접근할 수 있도록 **Model Context Protocol (MCP) 서버** 로 재배치.
+
+- **MCP 서버화** — FrameAI 의 스킬·에이전트·훅 시스템을 MCP 의 tool /
+  resource / prompt 인터페이스로 매핑. 한 번 만든 자동화가:
+    - Claude Code (현재 — 그대로 작동)
+    - ChatGPT 데스크톱 (MCP 클라이언트 모드)
+    - Cursor / Continue / Cline 등 MCP 호환 IDE
+  모두에서 같은 슬래시 명령 또는 자연어 호출로 작동
+- **작업 규모**: 기존 SKILL.md 의 dual-mode 계약을 MCP `tools/list` +
+  `tools/call` 인터페이스로 매핑, 훅을 MCP 미들웨어로 이전, settings
+  시스템 추상화. 1-2 개월 작업으로 추정
+- **사내 측면 효과**: 엔지니어가 선호하는 IDE / 채팅 도구와 무관하게
+  같은 자동화 라이브러리 공유 가능 → **AI 도구 종속성 해소**. 부서별/
+  개인별 도구 선호 차이를 라이브러리 통일성과 양립
+- **데이터 라우팅 트레이드오프 유지**: ChatGPT 데스크톱 사용 시
+  OpenAI 인프라로 데이터 흐름. Samsung 사내 Confidential 데이터는
+  여전히 Claude + Bedrock 서울 라우팅 권장. MCP 호환이 *어디서 호출
+  가능한지* 를 확장하는 것이지 *데이터 안전성을 보장하는 게* 아님 —
+  사용자/팀 단위 선택의 문제
+
 ## 한 줄
 
 > 다른 팀이 *어떤 일* 을 자동화하는 도구를 만들 때, FrameAI 는 *그 도구를
