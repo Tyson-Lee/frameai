@@ -9,15 +9,18 @@
 파일·이미지·텍스트 어떤 입력이든 받아 결과 파일을 그 회의 `runs/<시각>/`
 폴더에 영구 보관합니다.
 
-## 두 가지 사용 흐름
+## 사용 흐름
 
 | 사용자 | 어떻게 호출 | 언제 |
 |---|---|---|
-| **현장 엔지니어** | Claude Code 채팅창에 파일 드래그 + 자연어 (또는 `/<스킬명>`) | 일상 사용 |
+| **현장 엔지니어 (CLI 안 침)** | Claude Code 채팅창에 파일 드래그 + 자연어 (또는 `/<스킬명>`) | 일상 사용 |
+| **현장 엔지니어 (Claude Desktop)** | Desktop 채팅에 자연어 → MCP tool 자동 호출 | install 시 자동 등록 (재시작 1 회) |
 | **자동화 작성자 (1인)** | `frame add` CLI 한 줄 | 새 자동화 만들 때 |
 | **CI / cron / 배치** | `frame run --in ...` CLI | 스케줄링 / 외부 시스템 연동 |
 
-같은 자동화를 두 UX 모두로 호출할 수 있습니다 — 내부적으로 같은 `SKILL.md` 를 호출하기 때문입니다.
+같은 자동화를 네 UX 모두로 호출할 수 있습니다 — 내부적으로 같은 `SKILL.md`
+한 벌만 보고, Claude Code 는 네이티브로, Claude Desktop 은 MCP 서버를
+거쳐서 노출됩니다.
 
 ### 첫 설치 — 한 번만 (터미널 없이)
 
@@ -123,19 +126,24 @@ Claude Code 채팅에서 사용자가 install 명령 다시 paste 했을 때:
 ```
 1) install (위 quickstart) → "Claude Desktop MCP registered" 메시지 확인
 2) Claude Desktop 재시작
-3) 채팅창에 / 입력 → 13 개 FrameAI 스킬이 슬래시 메뉴에 나타남
-   (또는 "회의록 정리해줘" 같은 자연어 → Desktop LLM 이 스킬 자동 매칭)
+3) Settings → Connectors 에서 frameai 가 N tools available 로 보이면 활성
+   (N = kit skill 11 + 빌드된 자동화 수)
+4) 채팅창에 자연어로 "회의록 정리해줘" 등 입력
+   → Desktop LLM 이 frameai 의 tool 자동 호출 (별도 / 메뉴 조작 불필요)
 ```
+
+> Desktop UI 상 MCP **tools** 만 노출됨 (`/` 슬래시 메뉴는 Desktop 자체
+> 명령 전용). 스킬은 모두 tool 로 등록되어 LLM 의 자연어 매칭으로 호출.
 
 **무엇이 자동, 무엇이 수동**:
 
 | 동작 | Claude Code | Claude Desktop |
 |---|---|---|
 | `./frame add` 로 새 스킬 빌드 | ✅ 자체 LLM | ❌ 빌드는 Claude Code 에서만 |
-| 빌드된 스킬 사용 | ✅ `/<slug>` 자동 dispatch | ✅ MCP `/` 메뉴 또는 자연어 |
-| 새 스킬 노출 (`frame add` 직후) | ✅ 즉시 | ✅ 다음 새 채팅 또는 재시작 1 회 |
+| 빌드된 스킬 사용 | ✅ `/<slug>` 자동 dispatch | ✅ 자연어로 LLM 이 tool 자동 호출 |
+| 새 스킬 노출 (`frame add` 직후) | ✅ 즉시 | ✅ 다음 새 채팅 또는 Desktop 재시작 1 회 |
 | 별도 컨텍스트 auditor | ✅ Task tool spawn | ⚠️ Desktop Task tool 제한 — 일부 self-check degraded |
-| 파일 입출력 | ✅ Bash | ✅ MCP filesystem |
+| 파일 입출력 | ✅ Bash | ✅ MCP filesystem 등 Desktop 자체 도구 |
 
 > Claude Desktop 경로는 *USE 전용*. 새 스킬 빌드는 Claude Code 가 정답.
 
@@ -220,8 +228,10 @@ frameai/.claude/
 ```
 
 이 구조 덕분에:
-- `cd frameai && claude` 하면 즉시 10개 vendored skill (`/sprint`, `/prd` 등)
-  과 13개 런타임 built-in (`/code-review`, `/deep-research` 등) 모두 노출
+- `cd frameai && claude` 하면 즉시 11 개 kit skill (`/sprint`, `/prd`,
+  `/brainstorm` 등) + `frame add` 로 빌드한 모든 자동화
+  (예: `/meeting-summarizer`) + 다수의 Claude Code 런타임 built-in
+  (`/code-review`, `/deep-research`, `/verify` 등) 모두 노출
 - 새로 빌드된 `skills/<slug>/` 도 자동 발견 (별도 install / register 불필요)
 - 별도 "프로젝트 등록" 작업 없음 — Claude Code 앱은 폴더 자체를 프로젝트로
   인식. cmux/Desktop 앱은 Recent Projects 사이드바에서 한 번 열면 등록
@@ -242,14 +252,15 @@ PDF · PNG · JPG · 노트북을 네이티브 멀티모달로 처리**하므로
 | 파일 (CSV/JSON/MD/PDF) | `--in PATH` (반복 가능) | `runs/<ts>/inputs/` 로 복사 → Read |
 | 이미지 (PNG/JPG) | `--image PATH` (반복 가능) | 동일 위치 + 멀티모달 Read |
 
-**예시**:
+**예시** (`meeting-summarizer` 는 실제 빌드되어 있음; 나머지는 동일 패턴의
+가설 자동화):
 ```bash
-# 회의록 자동 정리: .vtt 자막 + 슬라이드 스샷 동시 입력
-./frame run meeting-digest --in zoom-transcript.vtt \
-                            --image slide-12.png \
-                            "이번 주 글로벌 reliability 미팅"
+# 회의록 자동 정리: .vtt 자막 입력 → 요약 + action items + 담당자별 이메일 draft
+./frame run meeting-summarizer \
+    --in automations/meeting-summarizer/samples/sample-2.en.vtt \
+    "팀 후속 조치 요약 부탁"
 
-# 고객 응대: 이메일 본문 + 첨부 PDF 함께 분류
+# 자동화 작성자가 새로 만들 수 있는 예시:
 ./frame run customer-reply --in inquiry.eml --in datasheet.pdf \
                             "고객 등급 platinum"
 ```
@@ -316,13 +327,13 @@ frameai/
 ├── CLAUDE.md              ← AI 어시스턴트용 프로젝트 컨텍스트
 ├── frame                  ← CLI 진입점 (한 파일 Python)
 │
-├── skills/                ← 슬래시 명령 (PRD/킥오프/스프린트/리뷰/... + 빌드된 자동화)
+├── skills/                ← 11 kit skill (PRD/킥오프/스프린트/리뷰/...) + 빌드된 자동화
 ├── agents/                ← 21 전문 에이전트 (PRD/계획/구현/리뷰/audit/...)
-├── scripts/               ← 헬퍼 (synthesizer, validator, hook, MCP 서버 등)
-│   └── frameai_mcp_server.py  ← MCP 서버 — Claude Desktop / Cursor 에서 사용
+├── scripts/               ← 헬퍼 (synthesizer, validator, hook 등)
+│   └── frameai_mcp_server.py  ← MCP 서버 — Desktop/Cursor 에서 tools 로 노출
 ├── project/.claude/       ← Claude Code 훅 + 설정 스니펫
-├── templates/             ← PRD / 요구사항 / 아키텍처 등 결과물 템플릿
-├── docs/                  ← CC 지원 매트릭스, 캐싱 노트 등
+├── templates/             ← PRD / 아키텍처 / 이슈 결과물 템플릿
+├── docs/                  ← CC 지원 매트릭스, 캐싱 노트, 보안, 텔레메트리 schema
 ├── tests/                 ← 회귀 가드 (lint + delegation guard + 통합)
 │
 └── automations/           ← ★ 빌드된 자동화 라이브러리
