@@ -1,0 +1,188 @@
+---
+name: meeting-summarizer
+description: Summarize meeting transcripts (.vtt/.txt/.md) into a one-page summary, action item table, and per-assignee follow-up email drafts. Language matches input (Korean → Korean, English → English).
+argument-hint: [transcript-path or free-form text]
+disable-model-invocation: false
+allowed-tools: Task, Read, Glob, Grep, Write, Edit, Bash(python3 skills/meeting-summarizer/helpers/*), Bash(mkdir *), Bash(cp *), Bash(date *), Bash(ls *)
+---
+
+{{PREAMBLE}}
+
+## What this skill does
+
+Reads a single meeting artifact (auto-caption `.vtt`, or plain notes `.txt`/`.md`) and writes three deliverables:
+
+1. `summary.md` — one-page markdown: agenda, decisions, next steps.
+2. `action_items.md` — markdown table with columns assignee, action, due, priority. Missing fields → `TBD`.
+3. `emails/<assignee>.md` — one polite follow-up draft per unique assignee, action items 1:1 matched.
+
+Korean input → Korean output (honorific `-습니다/-요` tone in emails). English input → English output (neutral professional tone).
+
+## Dual-mode invocation contract
+
+This skill MUST work two ways and write the same archive layout in both.
+
+### Mode A — CLI batch (`frame run` sets env vars)
+
+The CLI exports:
+
+| Variable | Meaning |
+|---|---|
+| `$FRAMEAI_RUN_MODE` | `"cli"` |
+| `$FRAMEAI_RUN_INPUTS` | absolute path to `inputs/` (read here) |
+| `$FRAMEAI_RUN_OUTPUTS` | absolute path to `outputs/` (write here only) |
+| `$FRAMEAI_RUN_TEXT` | free-form text from the caller |
+
+Resolve:
+- `inputs_dir  = $FRAMEAI_RUN_INPUTS`
+- `outputs_dir = $FRAMEAI_RUN_OUTPUTS`
+- `text_arg    = $FRAMEAI_RUN_TEXT`
+
+### Mode B — Chat invocation (`/meeting-summarizer ...`)
+
+`$FRAMEAI_RUN_MODE` is empty or unset. Self-bootstrap:
+
+1. Compute timestamp:
+   ```bash
+   ts="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+   ```
+2. `runs_dir=automations/meeting-summarizer/runs/$ts/`
+3. ```bash
+   mkdir -p "$runs_dir/inputs" "$runs_dir/outputs/emails"
+   ```
+4. Materialize the transcript into `runs_dir/inputs/`:
+   - If the user pasted text inline, Write it to `runs_dir/inputs/transcript.txt`.
+   - If the user pointed at a path inside the repo, `cp` it into `runs_dir/inputs/`.
+   - If the user pointed at a path outside the repo, Read it then Write the same content into `runs_dir/inputs/`.
+5. Bind:
+   - `inputs_dir  = $runs_dir/inputs`
+   - `outputs_dir = $runs_dir/outputs`
+   - `text_arg    = $ARGUMENTS`
+
+From this point the algorithm is mode-agnostic — it only touches `inputs_dir`, `outputs_dir`, `text_arg`. Never write outside `outputs_dir`.
+
+## Algorithm
+
+### Phase 1 — Locate transcript
+
+Pick the first file under `inputs_dir` with extension `.vtt`, `.md`, or `.txt`. Preference order if multiple: `.vtt` > `.md` > `.txt`. Bind `transcript_path`.
+
+If none found, stop and report: `No transcript found in inputs/ — expected one of .vtt/.md/.txt`.
+
+### Phase 2 — Preprocess (deterministic)
+
+Run the helper:
+```bash
+python3 skills/meeting-summarizer/helpers/preprocess.py "$transcript_path"
+```
+
+It strips `WEBVTT` headers, cue numbers, and timestamps; merges consecutive same-speaker turns; detects language by Hangul ratio (≥0.20 → `ko`, else `en`); and prints JSON:
+
+```json
+{"lang": "ko" | "en", "text": "<cleaned plain text>", "speakers": ["..."], "lines": 42}
+```
+
+Parse the JSON. Bind `lang`, `cleaned_text`, `speakers`.
+
+**Filename override**: if the transcript filename contains `.en.` the language is forced to `en`; if `.ko.` then `ko`. This lets the user fix mixed-language meetings without editing the helper.
+
+### Phase 3 — Draft outputs (single model pass)
+
+Generate all three artifacts in one response so terminology stays consistent.
+
+Hard rules:
+- Output language follows `lang`. Korean uses honorific business tone. English uses neutral professional tone.
+- Action item table columns:
+  - ko: `| 담당자 | 액션 | 기한 | 우선순위 |`
+  - en: `| Owner | Action | Due | Priority |`
+- Missing fields → `TBD`. Never invent dates or names.
+- Priority values: `높음/중간/낮음` (ko) or `High/Medium/Low` (en).
+- One follow-up email per unique assignee. Each email lists every action assigned to that person. Subject line includes the meeting date if mentioned in the transcript, else `회의 후속` (ko) / `Meeting follow-up` (en).
+- Assignee slug = lowercased, non-alphanumeric stripped. Korean names: keep Hangul, replace whitespace with `-` (e.g. `김민수` → `김민수`, `Jane Doe` → `jane-doe`). If a slug would be empty, fall back to `unnamed-<n>`.
+
+Write:
+- `outputs_dir/summary.md`
+- `outputs_dir/action_items.md`
+- `outputs_dir/emails/<slug>.md` (one per assignee)
+
+### Phase 4 — Refute-first auditor (separate context — MANDATORY)
+
+Spawn a Task subagent with `subagent_type: general-purpose` and **this exact prompt**:
+
+```
+You are a refute-first action-item auditor.
+
+DEFAULT POSITION: assume at least one action item was missed. Only conclude
+"no misses" after an exhaustive line-by-line scan of the transcript.
+
+INPUTS (use Read tool):
+- Transcript:               <transcript_path>
+- Extracted action items:   <outputs_dir>/action_items.md
+
+PROCEDURE:
+1) Read the full transcript once.
+2) For every sentence implying a future task (verb in future tense + owner,
+   OR an explicit ask / commitment / "I will" / "let's", or in Korean:
+   "-할게요" / "-하겠습니다" / "-해주세요" / "-맡아주세요" / "다음까지" /
+   "이번 주 안에" / "검토 부탁드립니다"),
+   check whether it appears as a row in action_items.md. Match on intent,
+   not wording.
+3) For each unmatched candidate, output a markdown row:
+   `<speaker or "unknown"> | <verbatim phrase> | <assignee or "TBD"> | <due or "TBD">`
+4) If you find zero misses, write `VERDICT: no misses found` and explain
+   in one sentence why you are confident.
+
+OUTPUT (markdown, no preamble, no postscript):
+
+# Audit verdict
+<one-line verdict>
+
+## Missed candidates
+<table or "(none)">
+
+## Confidence
+<High|Medium|Low> — <one-sentence reason>
+```
+
+Replace `<transcript_path>` and `<outputs_dir>` with the actual absolute paths before dispatching. Write the auditor response verbatim to `outputs_dir/audit.md`.
+
+**Reconciliation loop** (max 2 iterations total):
+
+- If the auditor reports ≥1 missed candidate AND iteration < 2:
+  1. Read `audit.md`.
+  2. Append the missed rows to `action_items.md` (preserve existing rows verbatim; new rows go at the bottom of the table).
+  3. Update the affected `emails/<slug>.md` to mention the newly added items.
+  4. Re-run the auditor (overwriting `audit.md`).
+- If the auditor reports zero misses, stop.
+- After 2 iterations, stop even if items remain — leave `audit.md` as the final verdict so the user can decide.
+
+### Phase 5 — Report
+
+Print, one per line, the relative paths of every output written. Example:
+
+```
+Outputs:
+- automations/meeting-summarizer/runs/<ts>/outputs/summary.md
+- automations/meeting-summarizer/runs/<ts>/outputs/action_items.md
+- automations/meeting-summarizer/runs/<ts>/outputs/emails/kim-min-su.md
+- automations/meeting-summarizer/runs/<ts>/outputs/emails/lee-ji-young.md
+- automations/meeting-summarizer/runs/<ts>/outputs/audit.md
+```
+
+In CLI mode the same paths sit under `$FRAMEAI_RUN_OUTPUTS`.
+
+## Error handling
+
+- No transcript found → stop with the exact message in Phase 1.
+- Preprocess helper non-zero exit → fall back to reading the raw transcript via the Read tool, do naive cleaning inline, and continue. Note the fallback in `audit.md`.
+- Task subagent failure on first audit attempt → retry once. If it fails again, write `outputs_dir/audit.md` with `# Audit verdict\nauditor unavailable — outputs not verified` and continue (do NOT block delivery).
+- Filesystem write failure inside `outputs_dir` → stop with the OS error; do not retry against a different path.
+
+## Limits / honest framing
+
+- **Hallucination risk**: action items are inferred from natural language. The refute-first auditor reduces misses but cannot prove zero — always skim before sending the emails.
+- **No real send**: this skill writes drafts; it does NOT call Gmail / Slack / email APIs.
+- **Single transcript per run**: multi-file inputs are not merged — only the first transcript is processed.
+- **Language detection by Hangul ratio**: mixed-language meetings (>20% Hangul) are treated as Korean. Override by putting `.en.` or `.ko.` in the filename.
+- **Calendar integration**: out of scope. Due dates like "next Monday" are kept verbatim, not resolved to a calendar date.
+- **Confidentiality**: outputs are written to the local working tree only. Nothing leaves the machine.

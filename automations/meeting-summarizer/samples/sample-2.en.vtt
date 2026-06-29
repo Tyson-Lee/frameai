@@ -1,0 +1,33 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:08.500
+<v Alex Chen>Thanks for joining everyone. Today we have two items: the API rate-limit incident and the onboarding redesign.
+
+2
+00:00:08.500 --> 00:00:18.200
+<v Priya Patel>On the rate-limit incident, root cause was a missing retry-after header in the gateway. I'll ship the fix by Friday and write up a postmortem.
+
+3
+00:00:18.200 --> 00:00:24.000
+<v Alex Chen>Great. Let's make the postmortem high priority — please share the doc by end of next week.
+
+4
+00:00:24.000 --> 00:00:33.500
+<v Marcus Lee>For the onboarding redesign, I have three mockups ready. I'll set up a review session next Tuesday and send invites today.
+
+5
+00:00:33.500 --> 00:00:40.000
+<v Priya Patel>I'd like to see the analytics numbers before the session — could someone pull the funnel data?
+
+6
+00:00:40.000 --> 00:00:48.000
+<v Alex Chen>Sure, I'll grab the funnel data from last quarter and send it around before Tuesday's meeting.
+
+7
+00:00:48.000 --> 00:00:54.000
+<v Marcus Lee>Sounds good. We decided to drop the email verification step from the new flow, agreed?
+
+8
+00:00:54.000 --> 00:00:58.000
+<v Alex Chen>Agreed. We'll revisit if signup fraud goes up.
