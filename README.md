@@ -39,6 +39,7 @@
 
 **방법 B — 터미널 직접 (자동화 작성자 / IT)**
 
+macOS / Linux:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Tyson-Lee/frameai/main/install.sh | bash
 # 또는 위치 / 사내 미러 지정:
@@ -47,7 +48,24 @@ FRAMEAI_HOME=~/my-frameai \
   bash install.sh
 ```
 
-`install.sh` 가 자동으로 git clone + `setup.sh` 까지 실행합니다.
+Windows (PowerShell):
+```powershell
+# 한 줄 설치 (irm = Invoke-RestMethod, iex = Invoke-Expression):
+irm https://raw.githubusercontent.com/Tyson-Lee/frameai/main/install.ps1 | iex
+
+# 또는 위치 / 사내 미러 지정:
+$env:FRAMEAI_HOME = "$HOME\my-frameai"
+$env:FRAMEAI_REPO_URL = "https://<사내-git>/frameai.git"
+.\install.ps1
+```
+
+`install.sh` (Mac/Linux) 또는 `install.ps1` (Windows) 가 자동으로
+git clone + `setup` 까지 실행합니다.
+
+**Windows 사용 시 차이점**:
+- `.claude\skills` 등은 **junction** 으로 생성 (symlink 대비 관리자 권한 불필요)
+- CLI 호출은 `.\frame add ...` (자동으로 `frame.cmd` → `python frame ...` 라우팅)
+- Git for Windows 가 함께 설치하는 bash 가 credential helper 의 inline 셸 함수를 실행하므로 push 패턴 동일
 
 ### 현장 엔지니어 (CLI 안 침)
 
