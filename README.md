@@ -110,21 +110,48 @@ Claude Code 채팅에서 사용자가 install 명령 다시 paste 했을 때:
 
 (터미널을 쓰는 IT/자동화 작성자는 `./frame update` 도 동일하게 작동합니다.)
 
-### 자동화 작성자 — push 인증 (CLI 한 번 셋업)
+### 자동화 작성자 — push 인증 (1 회 manual 셋업, 일반 사용자 불필요)
 
-`setup.sh` 가 자동으로 per-repo git credential helper 를 등록합니다.
-이후 모든 push 는 `GH_TOKEN` 환경변수로:
+> **일반 사용자 (현장 엔지니어) 는 push 안 함** → 이 섹션 스킵.
+> 자동화를 직접 만들어 사내 라이브러리에 commit/push 하는 사람만 해당.
+
+setup.sh / setup.ps1 은 **자동 인증 셋업을 하지 않습니다** (이전 버전은
+하드코딩된 식별자를 박았다가 보안적으로 부적절해 제거). 작성자는 본인
+GitHub identity 로 직접 1 회 셋업:
+
+**방식 A — 본인 username + PAT 환경변수**
 
 ```bash
-export GH_TOKEN=<your-PAT>
-git push                          # 평범한 push
-./frame share <slug> --push       # 커밋 + push 한 번에
+# 본인 정보로 한 번만 (frameai 폴더 안에서):
+git config credential.helper ""
+git config --add credential.helper \
+  '!f() { test -n "$GH_TOKEN" && test -n "$GH_USERNAME" && \
+    printf "username=%s\npassword=%s\n" "$GH_USERNAME" "$GH_TOKEN"; }; f'
 ```
 
-PAT 영구 보관이 부담스러우면:
-- `~/.zshrc` (또는 `.bashrc`) 에 `export GH_TOKEN=...` 추가
-- 또는 SSH key 셋업 후 remote URL 을 `git@github.com:Tyson-Lee/frameai.git`
-  로 변경 (장기 권장)
+이후 push:
+```bash
+export GH_USERNAME=<your-github-username>
+export GH_TOKEN=<your-PAT>
+git push                          # 또는 ./frame share <slug> --push
+```
+
+`~/.zshrc` 또는 `.bashrc` 에 두 줄 export 두면 매 셸 자동.
+
+**방식 B — SSH key (장기 권장, 더 안전)**
+
+```bash
+# 1회만:
+ssh-keygen -t ed25519 -C "your@email.com"
+# 출력된 public key 를 GitHub Settings → SSH and GPG keys 에 등록
+git remote set-url origin git@github.com:<your-username>/<your-fork>.git
+```
+
+이후 `git push` / `./frame share <slug> --push` 가 SSH 키로 자동 인증.
+
+**왜 자동 셋업 안 하는가**: setup.sh 가 일반 사용자 머신에 일괄 적용
+되는데, 일반 사용자는 push 자체를 안 함. 작성자만 본인 정보로 명시
+적으로 셋업하는 게 보안 + 정직성 둘 다 정답.
 
 ### 자동화 작성자 (CLI Quickstart)
 

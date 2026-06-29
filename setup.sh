@@ -56,23 +56,12 @@ find scripts -name '*.sh' -exec chmod +x {} \;
 find project/.claude/hooks -name '*.py' -exec chmod +x {} \; 2>/dev/null || true
 green "✓ executable bits"
 
-# --- 2.5. git credential helper (uses GH_TOKEN env for Tyson-Lee identity) -
-
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  current=$(git config --get-all credential.helper 2>/dev/null || true)
-  if ! printf '%s' "$current" | grep -q 'Tyson-Lee'; then
-    git config credential.helper ""
-    git config --add credential.helper \
-      '!f() { test -n "$GH_TOKEN" && printf "username=Tyson-Lee\npassword=%s\n" "$GH_TOKEN"; }; f'
-    green "✓ git credential helper installed (uses GH_TOKEN env)"
-    yellow "  push pattern:  GH_TOKEN=<your-PAT> git push"
-    yellow "  or use:        GH_TOKEN=<your-PAT> ./frame share <slug> --push"
-  else
-    green "✓ git credential helper already configured"
-  fi
-fi
-
 # --- 3. .claude/ symlinks (recreate if missing) ----------------------------
+# (NOTE: git credential helper is NOT auto-installed.
+#  End users only run /skills — no push needed.
+#  Automation authors who want to push: see README "자동화 작성자 — push
+#  인증" for the manual one-liner that uses YOUR username, not someone
+#  else's hardcoded identifier.)
 
 mkdir -p .claude
 

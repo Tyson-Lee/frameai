@@ -47,23 +47,12 @@ if ([int]$pyMajor -lt 3 -or ([int]$pyMajor -eq 3 -and [int]$pyMinor -lt 11)) {
 $claudeVer = (& claude --version 2>&1) | Select-Object -First 1
 Write-Host "[OK] prerequisites: python $pyVer, claude $claudeVer, git" -ForegroundColor Green
 
-# --- 2. Git credential helper (uses GH_TOKEN env for Tyson-Lee push) ------
-if (Test-Path .git) {
-    $current = git config --get-all credential.helper 2>$null
-    if ($current -notmatch 'Tyson-Lee') {
-        git config credential.helper ""
-        git config --add credential.helper '!f() { test -n "$GH_TOKEN" && printf "username=Tyson-Lee\npassword=%s\n" "$GH_TOKEN"; }; f'
-        Write-Host "[OK] git credential helper installed (uses GH_TOKEN env)" -ForegroundColor Green
-        Write-Host "  push pattern:  `$env:GH_TOKEN='<your-PAT>'; git push" -ForegroundColor Yellow
-        Write-Host "  or use:        `$env:GH_TOKEN='<your-PAT>'; .\frame share <slug> --push" -ForegroundColor Yellow
-        Write-Host "  (Git for Windows ships with bash, so the inline shell helper works.)" -ForegroundColor DarkGray
-    }
-    else {
-        Write-Host "[OK] git credential helper already configured" -ForegroundColor Green
-    }
-}
-
 # --- 3. .claude\ layout (Windows junctions instead of symlinks) -----------
+# (NOTE: git credential helper is NOT auto-installed.
+#  End users only run /skills — no push needed.
+#  Automation authors who want to push: see README "자동화 작성자 — push
+#  인증" for the manual one-liner that uses YOUR username, not someone
+#  else's hardcoded identifier.)
 if (-not (Test-Path .claude)) {
     New-Item -ItemType Directory -Path .claude | Out-Null
 }
