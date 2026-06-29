@@ -47,6 +47,25 @@ if ([int]$pyMajor -lt 3 -or ([int]$pyMajor -eq 3 -and [int]$pyMinor -lt 11)) {
 $claudeVer = (& claude --version 2>&1) | Select-Object -First 1
 Write-Host "[OK] prerequisites: python $pyVer, claude $claudeVer, git" -ForegroundColor Green
 
+# --- 1b. Python runtime deps (pyyaml + mcp for the MCP server) -----------
+function Ensure-PyModule {
+    param([string]$Mod, [string]$Pkg)
+    & python -c "import $Mod" 2>$null
+    if ($LASTEXITCODE -eq 0) { return $true }
+    Write-Host "  installing $Pkg (one-time, user site)..." -ForegroundColor Yellow
+    & python -m pip install --user --quiet $Pkg *>$null
+    return ($LASTEXITCODE -eq 0)
+}
+
+if (-not (Ensure-PyModule 'yaml' 'pyyaml')) {
+    Write-Host "[X] pyyaml install failed — install manually and re-run" -ForegroundColor Red
+    exit 2
+}
+if (-not (Ensure-PyModule 'mcp' 'mcp')) {
+    Write-Host "  (mcp install skipped — Claude Desktop bridge will be inactive)" -ForegroundColor Yellow
+}
+Write-Host "[OK] python deps (pyyaml, mcp)" -ForegroundColor Green
+
 # --- 3. .claude\ layout (Windows junctions instead of symlinks) -----------
 # (NOTE: git credential helper is NOT auto-installed.
 #  End users only run /skills — no push needed.
@@ -103,6 +122,63 @@ if ($LASTEXITCODE -eq 0) {
 else {
     Write-Host "  warning: smoke tests failed — re-run: python -m pytest -q" -ForegroundColor Yellow
 }
+
+# --- 6. Claude Desktop MCP registration ----------------------------------
+function Register-ClaudeDesktop {
+    $configDir = Join-Path $env:APPDATA "Claude"
+    if (-not (Test-Path $configDir)) {
+        Write-Host "  (Claude Desktop not detected — skipping MCP registration. Install Desktop and re-run setup.ps1 to enable.)" -ForegroundColor Yellow
+        return
+    }
+    & python -c "import mcp" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  (mcp package missing — skipping Claude Desktop registration. Install with: python -m pip install --user mcp)" -ForegroundColor Yellow
+        return
+    }
+
+    $configFile = Join-Path $configDir "claude_desktop_config.json"
+    $serverPath = Join-Path $Root "scripts\frameai_mcp_server.py"
+    $pyPath = (Get-Command python).Source
+
+    $tmpScript = New-TemporaryFile
+    @'
+import json, sys
+from pathlib import Path
+
+cfg_path = Path(sys.argv[1])
+server_path = sys.argv[2]
+py = sys.argv[3]
+
+if cfg_path.exists():
+    try:
+        data = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        print("  X existing claude_desktop_config.json is malformed -- skipping (manual fix required)", file=sys.stderr)
+        sys.exit(0)
+    if not isinstance(data, dict):
+        data = {}
+else:
+    data = {}
+
+data.setdefault("mcpServers", {})
+new_entry = {"command": py, "args": [server_path]}
+prev = data["mcpServers"].get("frameai")
+
+if prev == new_entry:
+    print(f"  OK Claude Desktop MCP already registered (no change): {cfg_path}")
+else:
+    data["mcpServers"]["frameai"] = new_entry
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"  OK Claude Desktop MCP registered: {cfg_path}")
+    print("    Restart Claude Desktop to load FrameAI skills.")
+'@ | Set-Content -Path $tmpScript -Encoding UTF8
+
+    & python $tmpScript $configFile $serverPath $pyPath
+    Remove-Item $tmpScript -Force
+}
+
+Register-ClaudeDesktop
 
 Write-Host ""
 Write-Host "FrameAI setup complete." -ForegroundColor Green

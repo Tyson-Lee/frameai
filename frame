@@ -90,6 +90,21 @@ files — the user reviews them, then explicitly runs
 The deliverable is **a new skill**, not a one-shot script. Specifically:
 
   - Create `skills/{slug}/SKILL.md.tmpl` declaring inputs, outputs, and steps.
+
+    The frontmatter `description:` field MUST be a single concise paragraph
+    (≤ 220 chars) that includes ALL THREE of the following so MCP clients
+    (Claude Desktop, Cursor, …) can semantic-match user requests to this
+    skill:
+      (a) input types accepted (e.g. ".vtt, .txt, free-form text")
+      (b) outputs produced (e.g. "1-page summary + action item table +
+          per-owner email drafts")
+      (c) 2-3 trigger keywords in the user's own language
+          (e.g. "회의록 / 미팅 / transcript")
+    Bad: "Summarize a meeting."
+    Good: "Summarize meeting transcripts (.vtt/.txt) into a one-page
+           summary, action item table, and per-assignee follow-up emails.
+           Triggers on: 회의록, 미팅 정리, transcript."
+
     The skill MUST support a **dual-mode invocation contract** so that
     `frame run` (CLI batch) and chat-based slash-command invocation both
     produce the same archive layout:

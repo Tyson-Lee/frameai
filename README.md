@@ -110,6 +110,35 @@ Claude Code 채팅에서 사용자가 install 명령 다시 paste 했을 때:
 
 (터미널을 쓰는 IT/자동화 작성자는 `./frame update` 도 동일하게 작동합니다.)
 
+### Claude Desktop 에서 쓰기 (install 시 자동 등록)
+
+`install.sh` / `install.ps1` 이 자동으로:
+1. `mcp` Python 패키지 설치
+2. Claude Desktop config 파일 (`~/Library/Application Support/Claude/claude_desktop_config.json`
+   on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows) 에
+   FrameAI MCP 서버 항목을 **safe-merge** (기존 mcpServers / preferences 보존)
+3. Claude Desktop 미설치 시 자동 skip
+
+활성 절차:
+```
+1) install (위 quickstart) → "Claude Desktop MCP registered" 메시지 확인
+2) Claude Desktop 재시작
+3) 채팅창에 / 입력 → 13 개 FrameAI 스킬이 슬래시 메뉴에 나타남
+   (또는 "회의록 정리해줘" 같은 자연어 → Desktop LLM 이 스킬 자동 매칭)
+```
+
+**무엇이 자동, 무엇이 수동**:
+
+| 동작 | Claude Code | Claude Desktop |
+|---|---|---|
+| `./frame add` 로 새 스킬 빌드 | ✅ 자체 LLM | ❌ 빌드는 Claude Code 에서만 |
+| 빌드된 스킬 사용 | ✅ `/<slug>` 자동 dispatch | ✅ MCP `/` 메뉴 또는 자연어 |
+| 새 스킬 노출 (`frame add` 직후) | ✅ 즉시 | ✅ 다음 새 채팅 또는 재시작 1 회 |
+| 별도 컨텍스트 auditor | ✅ Task tool spawn | ⚠️ Desktop Task tool 제한 — 일부 self-check degraded |
+| 파일 입출력 | ✅ Bash | ✅ MCP filesystem |
+
+> Claude Desktop 경로는 *USE 전용*. 새 스킬 빌드는 Claude Code 가 정답.
+
 ### 자동화 작성자 — push 인증 (1 회 manual 셋업, 일반 사용자 불필요)
 
 > **일반 사용자 (현장 엔지니어) 는 push 안 함** → 이 섹션 스킵.
@@ -287,9 +316,10 @@ frameai/
 ├── CLAUDE.md              ← AI 어시스턴트용 프로젝트 컨텍스트
 ├── frame                  ← CLI 진입점 (한 파일 Python)
 │
-├── skills/                ← 11 슬래시 명령 (PRD/킥오프/스프린트/리뷰/...)
+├── skills/                ← 슬래시 명령 (PRD/킥오프/스프린트/리뷰/... + 빌드된 자동화)
 ├── agents/                ← 21 전문 에이전트 (PRD/계획/구현/리뷰/audit/...)
-├── scripts/               ← 18 헬퍼 (synthesizer, validator, hook 등)
+├── scripts/               ← 헬퍼 (synthesizer, validator, hook, MCP 서버 등)
+│   └── frameai_mcp_server.py  ← MCP 서버 — Claude Desktop / Cursor 에서 사용
 ├── project/.claude/       ← Claude Code 훅 + 설정 스니펫
 ├── templates/             ← PRD / 요구사항 / 아키텍처 등 결과물 템플릿
 ├── docs/                  ← CC 지원 매트릭스, 캐싱 노트 등
