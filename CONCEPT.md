@@ -65,55 +65,6 @@ frame add --refine weekly-status-report "Slack API 가 v2 로 바뀌어서
 AI 가 `automations/<slug>/generated/` 의 코드를 분석해 변경을 적용하고,
 회귀 테스트를 다시 돌리고, before_after.md 를 갱신합니다.
 
-## 평가 기준에 대한 응답 (정직한 매핑)
-
-### 영향력 (30점)
-
-FrameAI 자체의 임팩트는 **자동화 만드는 비용을 0 에 가깝게 낮추는 것**
-입니다. 그 임팩트의 증거는 **시연 자동화의 before_after.md** 에 명시된
-실측 시간 절감 수치로 보입니다.
-
-예: 사용자가 매주 수동으로 2시간 30분 들이던 `weekly-status-report` →
-`frame run` 한 줄 + 5초.
-
-### 자율성 (25점)
-
-`frame add` 호출 후 사용자 개입은 평균 N회 이하 (시연 영상에 카운터
-표시). 헤드리스 Claude Code 가 36 에이전트를 통해 전체 빌드 진행, 별도
-컨텍스트 auditor 가 단계별 차단 검증.
-
-비교 가능한 다른 시스템 (no-code 에이전트 빌더, AutoGPT 등) 은 보통
-사용자 개입 10-30회 / 빌드. FrameAI 는 **선택지를 좁히고**, **차단
-의사결정만 사람에게 묻습니다**.
-
-### 기술적 완성도 (20점)
-
-- 36 전문 에이전트 + 9 파이프라인 스킬 + 21 헬퍼 스크립트
-- 200+ 회귀 테스트 (lint + 위임 가드 + 통합)
-- **Platform-first 위임**: 런타임 `/code-review`, `/security-review`,
-  `/deep-research`, `/verify` 를 직접 호출. 자체 재구현 (NIH) 대신 thin
-  synthesis guard 만 책임
-- **Graceful degrade**: 런타임 스킬이 미노출일 때 자체 폴백 (e.g.
-  `scripts/has_skill.py` 의 3-state 프로빙)
-- **Sycophancy 차단**: 모든 검증은 *separate context* 의 refute-first
-  프롬프트로 수행 (synthesizer-auditor, review-merge-auditor)
-- **격리**: git worktree + flock-protected registry_edit 으로 병렬
-  에이전트의 동시 쓰기 안전
-
-### 사용자 경험 (15점)
-
-- 입력: 자연어 한 문단
-- 진행 가시화: `sprint_state.md`, `STATUS.md` 실시간 갱신
-- 단계별 게이트: 각 phase 끝에 mandatory checkpoint
-- 라이브러리 뷰: `frame list` → 상태별 자동화 일람
-- 공유: `frame share` → git commit 한 줄
-
-### 확장성 (10점)
-
-자동화 추가 = `frame add` 한 번. 도메인 무관 (개발, 영업, 운영, HR ...).
-새 도메인 전용 에이전트 / 스킬이 필요하면 `agents/` 또는 `skills/` 폴더에
-추가하면 즉시 통합 — kit 재빌드 불필요.
-
 ## 한계 (정직)
 
 - **모델 비용**: 자동화 한 개 빌드에 $0.5 ~ $5 의 API 비용 (정도는 작업

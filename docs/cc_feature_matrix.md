@@ -1,9 +1,9 @@
 # Claude Code Feature/Version Support Matrix
 
 > Status: **largely resolved at v2.1.153 (2026-06-18 evidence sweep). Rows requiring an environment-side experiment remain `pending`.**
-> Version policy: **Track latest** — the kit does not pin a specific minimum version; it follows the CC build at PR-land time and re-verifies every few months. Rationale: single-author kit, aggressive feature adoption, the cost of re-verification at a few-month cadence is acceptable.
-> `requiredMinimumVersion` enforcement: **No (policy decision).** README Prerequisites carries a documentation-only note; settings.json does not refuse older builds. Decision made independently of whether the field EXISTS in CC (row A8 — verified existence at v2.1.153, kit still chooses not to set it).
-> Owner: kit-author (single maintainer)
+> Version policy: **Track latest** — FrameAI does not pin a specific minimum version; it follows the CC build at PR-land time and re-verifies every few months. Rationale: single-author FrameAI adaptation, aggressive feature adoption, the cost of re-verification at a few-month cadence is acceptable.
+> `requiredMinimumVersion` enforcement: **No (policy decision).** README Prerequisites carries a documentation-only note; settings.json does not refuse older builds. Decision made independently of whether the field EXISTS in CC (row A8 — verified existence at v2.1.153, FrameAI still chooses not to set it).
+> Owner: Tyson-Lee (FrameAI maintainer; matrix originally authored for upstream `claude-dev-kit` by pillip, re-verified for FrameAI's vendored subset)
 > Targeted (verified-at) build: **`claude --version` → `2.1.153 (Claude Code)`** (cmux app, macOS, 2026-06-18)
 > Resolves: ISSUE-014
 > Consumed by: ISSUE-015, ISSUE-016, ISSUE-017, ISSUE-020

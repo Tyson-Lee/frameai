@@ -233,16 +233,6 @@ frameai/
             └── log.txt
 ```
 
-## 평가 기준 매핑
-
-| 평가 항목 | FrameAI 가 어떻게 응답하는가 |
-|---|---|
-| **영향력 (30점)** | `automations/<slug>/before_after.md` 시간 절감 + `runs/` 누적 사용량으로 *실측* 임팩트 입증 |
-| **자율성 (25점)** | `frame add` 한 줄 입력 → 헤드리스 Claude Code 가 36 에이전트로 전체 빌드. 이후 `frame run` 마다 자연어 인자만 |
-| **기술 완성도 (20점)** | 36 에이전트 · 10 스킬 · 21 스크립트 + 200+ 회귀 테스트. 모든 차단 의사결정은 별도 컨텍스트 auditor 의 refute-first 검증. **PDF · 이미지 멀티모달 입력 네이티브 지원** |
-| **사용자 경험 (15점)** | `frame list` / `frame run` / `frame share` 3 명령. 진행 가시화 (STATUS.md, sprint_state.md). 매 호출은 입력·프롬프트·출력·로그가 한 폴더에 모임 |
-| **확장성 (10점)** | 만들어진 자동화 = `SKILL.md` 한 파일 → git pull 한 번에 팀원 즉시 사용. `frame refine` 으로 AI 가 자동화 진화 |
-
 ## 비전: Git-like 자동화 라이브러리
 
 상세는 [CONCEPT.md](CONCEPT.md) 참고. 요약:
@@ -304,7 +294,8 @@ MIT. 자세한 내용은 [LICENSE](LICENSE) 참고.
 
 ## 크레딧
 
-FrameAI 는 저자의 오픈소스 프로젝트 `claude-dev-kit` 에서 검증된
-파이프라인 (PRD → 킥오프 → 스프린트 → 리뷰 → 십) 위에 컨테스트 컨텍스트
-로 재포지셔닝되었습니다. Claude Code 의 플러그인 시스템 · 훅 이벤트 ·
-캐싱 정책 · 멀티모달 Read 등 런타임 캐퍼빌리티를 적극 활용합니다.
+FrameAI 는 오픈소스 프로젝트 `claude-dev-kit` (저자: pillip, MIT
+License) 에서 검증된 파이프라인 (PRD → 킥오프 → 스프린트) 위에
+컨테스트 컨텍스트로 재포지셔닝되었습니다. Claude Code 의 플러그인
+시스템 · 훅 이벤트 · 캐싱 정책 · 멀티모달 Read 등 런타임 캐퍼빌리티를
+적극 활용합니다.
