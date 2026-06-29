@@ -63,9 +63,34 @@ $env:FRAMEAI_REPO_URL = "https://<사내-git>/frameai.git"
 git clone + `setup` 까지 실행합니다.
 
 **Windows 사용 시 차이점**:
+- **PowerShell 의 `curl` 은 `Invoke-WebRequest` 의 alias** — 실제 curl 이
+  아니라서 `-fsSL` 같은 옵션 안 받음. 또한 `bash` 가 기본 미설치라
+  `... | bash` 도 실패. 따라서 Windows 에서는 **`irm | iex` (PowerShell
+  네이티브) 또는 Git Bash 안에서 `curl | bash` 둘 중 하나** 사용.
 - `.claude\skills` 등은 **junction** 으로 생성 (symlink 대비 관리자 권한 불필요)
 - CLI 호출은 `.\frame add ...` (자동으로 `frame.cmd` → `python frame ...` 라우팅)
 - Git for Windows 가 함께 설치하는 bash 가 credential helper 의 inline 셸 함수를 실행하므로 push 패턴 동일
+
+### 재설치 / 업데이트 — install 명령 재실행 시 동작
+
+install 명령은 **idempotent** — 같은 명령을 다시 실행해도 안전:
+
+| 상태 | install.sh / install.ps1 동작 |
+|---|---|
+| **`~/frameai/` 가 이미 FrameAI 레포** (`.git` 있음) | "이미 설치됨. 업데이트 진행..." 메시지 + `git pull --ff-only` + `setup.sh` 재실행. → 사실상 `./frame update` 와 동일 |
+| **`~/frameai/` 에 commit 안 된 변경 존재** | `✘ uncommitted changes — resolve manually or set FRAMEAI_HOME=<other-path>` 출력 + 종료 (안전 가드) |
+| **`~/frameai/` 가 FrameAI 아닌 다른 폴더** | `✘ exists but is not a FrameAI install. Set FRAMEAI_HOME=<other-path>.` 출력 + 종료 (기존 폴더 보호) |
+| **`~/frameai/` 가 없음** | 정상 신규 설치 (clone + setup) |
+
+**엣지 케이스**: 이미 *다른 경로* (예: `~/work/frameai-prod`) 에 clone
+해둔 상태에서 그냥 install 재실행하면 **`~/frameai/` 에 별도 clone 이
+새로 만들어짐** (중복). install 위치 분리하려면 `FRAMEAI_HOME=~/work/frameai-prod`
+환경변수 명시 후 실행.
+
+Claude Code 채팅에서 사용자가 install 명령 다시 paste 했을 때:
+- 이미 설치된 사용자 → 자동 update 메시지, 자연스럽게 흐름
+- 미설치 사용자 → 신규 설치 진행
+- 추가 사용자 행동 0회
 
 ### 현장 엔지니어 (CLI 안 침)
 
