@@ -224,6 +224,9 @@ automations/ecn-writer/runs/2026-06-27T14-22-08/
 
 ## Repo 구조
 
+비-UI 자동화 빌드에 필요한 lean 구성. UI/디자인/대규모 코드베이스 분석
+같은 도메인 확장은 향후 마일스톤으로 분리.
+
 ```
 frameai/
 ├── README.md              ← 이 파일
@@ -231,9 +234,9 @@ frameai/
 ├── CLAUDE.md              ← AI 어시스턴트용 프로젝트 컨텍스트
 ├── frame                  ← CLI 진입점 (한 파일 Python)
 │
-├── skills/                ← 슬래시 명령들 (kit의 10개 + frame add 가 추가)
-├── agents/                ← 36 전문 에이전트
-├── scripts/               ← 21 헬퍼 (synthesizer, validator, hook 등)
+├── skills/                ← 11 슬래시 명령 (PRD/킥오프/스프린트/리뷰/...)
+├── agents/                ← 21 전문 에이전트 (PRD/계획/구현/리뷰/audit/...)
+├── scripts/               ← 18 헬퍼 (synthesizer, validator, hook 등)
 ├── project/.claude/       ← Claude Code 훅 + 설정 스니펫
 ├── templates/             ← PRD / 요구사항 / 아키텍처 등 결과물 템플릿
 ├── docs/                  ← CC 지원 매트릭스, 캐싱 노트 등
