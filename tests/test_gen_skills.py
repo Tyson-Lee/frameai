@@ -73,10 +73,13 @@ class TestResolvers:
 
 class TestProcessTemplate:
     def test_generated_header_present(self):
+        # Header lives inside the YAML frontmatter as a `#` comment so YAML
+        # parsers (Claude Code CLI, MCP clients) read `name:` / `description:`
+        # on the first real key line — not a stray HTML comment on line 1.
         templates = discover_templates()
         assert templates, "No templates found"
         content = process_template(templates[0])
-        assert content.startswith("<!-- AUTO-GENERATED")
+        assert content.startswith("---\n# AUTO-GENERATED")
 
     def test_no_unresolved_placeholders(self):
         import re
