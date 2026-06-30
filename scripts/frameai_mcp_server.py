@@ -34,6 +34,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -75,6 +76,22 @@ BUILD_PIPELINE_SKILLS = {
     "ship",
     "review",
     "diagnose",
+}
+
+# Deterministic skills the MCP server runs directly (subprocess) instead of
+# returning SKILL instructions for the calling LLM. This lets Claude Desktop
+# (which has no Bash) actually execute the operation end-to-end. Each entry
+# hardcodes the command — no user input flows in, so injection surface is
+# zero. Add new entries only for genuinely deterministic skills.
+EXECUTABLE_SKILLS: dict[str, dict[str, Any]] = {
+    "frameai-update": {
+        "argv": ["./frame", "update"],
+        "timeout_sec": 120,
+        "summary": (
+            "Pull the latest FrameAI skills and agents from upstream, "
+            "restore executable bits, and report what changed."
+        ),
+    },
 }
 
 logger = logging.getLogger("frameai-mcp")
@@ -174,11 +191,66 @@ async def handle_list_tools() -> list[types.Tool]:
     return tools
 
 
+def _run_executable_skill(name: str, spec: dict[str, Any]) -> types.TextContent:
+    """Run a deterministic skill directly via subprocess and format the result.
+
+    Used for skills that have no LLM-driven planning step (e.g. frameai-update
+    is just `git pull --ff-only`). Lets Claude Desktop — which has no Bash —
+    actually complete the operation end-to-end through the MCP tool call,
+    instead of receiving instructions it can't execute.
+    """
+    try:
+        proc = subprocess.run(
+            spec["argv"],
+            capture_output=True,
+            text=True,
+            timeout=spec.get("timeout_sec", 120),
+            cwd=str(ROOT),
+        )
+    except subprocess.TimeoutExpired:
+        return types.TextContent(
+            type="text",
+            text=(
+                f"# FrameAI skill: {name}\n\n"
+                f"Timed out after {spec.get('timeout_sec', 120)}s. "
+                "Re-run from a terminal to investigate."
+            ),
+        )
+    except FileNotFoundError as exc:
+        return types.TextContent(
+            type="text",
+            text=(
+                f"# FrameAI skill: {name}\n\n"
+                f"Command not found: {exc}. The FrameAI install may be "
+                "missing or its `frame` script is not executable."
+            ),
+        )
+
+    status = "✓ success" if proc.returncode == 0 else f"✘ exit code {proc.returncode}"
+    return types.TextContent(
+        type="text",
+        text=(
+            f"# FrameAI skill: {name}\n\n"
+            f"{spec.get('summary', '').strip()}\n\n"
+            f"**Status**: {status}\n\n"
+            f"## stdout\n```\n{proc.stdout or '(empty)'}\n```\n\n"
+            f"## stderr\n```\n{proc.stderr or '(empty)'}\n```"
+        ),
+    )
+
+
 @server.call_tool()
 async def handle_call_tool(
     name: str,
     arguments: dict[str, Any] | None,
 ) -> list[types.TextContent]:
+    # Deterministic skill — server runs it directly (works in Desktop too,
+    # which has no Bash). User input is intentionally ignored: these skills
+    # are hardcoded, no injection surface.
+    if name in EXECUTABLE_SKILLS:
+        logger.info("call_tool %s (executable, direct subprocess)", name)
+        return [_run_executable_skill(name, EXECUTABLE_SKILLS[name])]
+
     skill_md = SKILLS_DIR / name / "SKILL.md"
     if not skill_md.is_file():
         return [
