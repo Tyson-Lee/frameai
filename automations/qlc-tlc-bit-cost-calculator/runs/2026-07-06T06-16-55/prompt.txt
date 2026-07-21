@@ -1,0 +1,12 @@
+Invoke the `qlc-tlc-bit-cost-calculator` skill (skills/qlc-tlc-bit-cost-calculator/SKILL.md).
+
+Inputs:
+  (no file inputs)
+
+Text arguments: (none)
+
+Write ALL outputs under: automations\qlc-tlc-bit-cost-calculator\runs\2026-07-06T06-16-55\outputs
+Do NOT write outside that directory.
+Inputs are at: automations\qlc-tlc-bit-cost-calculator\runs\2026-07-06T06-16-55\inputs
+
+Execute the skill end-to-end without follow-up questions where reasonable defaults exist. After completion, list every file you wrote (one per line, relative to repo root).

@@ -1,0 +1,16 @@
+FRAMEAI_RUN_INPUTS=C:\Users\UserK\frameai\automations\qlc-tlc-bit-cost-calculator\runs\2026-07-06T06-16-55\inputs
+FRAMEAI_RUN_OUTPUTS=C:\Users\UserK\frameai\automations\qlc-tlc-bit-cost-calculator\runs\2026-07-06T06-16-55\outputs
+FRAMEAI_RUN_TEXT=''
+FRAMEAI_RUN_MODE=cli
+
+--- claude --print stdout ---
+All outputs written correctly within the outputs directory only. No params or `key=value` text were supplied, so per the skill's Phase 1 fallback I used the bundled sample (`samples/sample-1.txt`) — this run's numbers are clearly labeled as synthetic sample data (`is_sample: true`) throughout the outputs.
+
+Outputs:
+- automations/qlc-tlc-bit-cost-calculator/runs/2026-07-06T06-16-55/outputs/sweep.csv
+- automations/qlc-tlc-bit-cost-calculator/runs/2026-07-06T06-16-55/outputs/sweep.json
+- automations/qlc-tlc-bit-cost-calculator/runs/2026-07-06T06-16-55/outputs/summary.json
+- automations/qlc-tlc-bit-cost-calculator/runs/2026-07-06T06-16-55/outputs/visualization.html
+- automations/qlc-tlc-bit-cost-calculator/runs/2026-07-06T06-16-55/outputs/report.md
+
+To get a real analysis instead of the sample: supply a params file (see `automations/qlc-tlc-bit-cost-calculator/samples/sample-1.txt` for the required 30 keys) or type real fab numbers directly into `visualization.html` — values never leave the browser.

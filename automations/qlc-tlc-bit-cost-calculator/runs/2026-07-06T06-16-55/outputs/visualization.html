@@ -1,0 +1,2985 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QLC vs TLC bit-cost calculator</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #6b7280; --panel: #f4f5f7;
+    --border: #d9dce1; --combo: #2563eb; --dedicated: #d97706;
+    --danger: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --fg: #e8e9eb; --muted: #9aa1ac; --panel: #1d2025;
+      --border: #33373f; --combo: #6ea8fe; --dedicated: #f5a623;
+      --danger: #f87171; }
+  }
+  body { font-family: -apple-system, "Segoe UI", Pretendard, sans-serif; background: var(--bg);
+    color: var(--fg); margin: 0; padding: 24px; }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; font-size: 0.9rem; }
+  .sample-banner { margin: 0 0 16px; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem;
+    background: rgba(37, 99, 235, 0.08); border: 1px solid var(--combo); color: var(--fg); }
+  .layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+  input[type=range] { width: 100%; accent-color: var(--combo); }
+  input[type=range]:disabled { opacity: 0.4; }
+  .ratio-readout { font-size: 1.6rem; font-weight: 600; margin: 8px 0 16px; }
+  .ratio-readout .qlc { color: var(--combo); } .ratio-readout .tlc { color: var(--dedicated); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+  td { padding: 4px 0; border-bottom: 1px solid var(--border); }
+  td.val { text-align: right; font-variant-numeric: tabular-nums; }
+  .verdict { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem;
+    background: var(--bg); border: 1px solid var(--border); min-height: 1.2em; }
+  .dev-cost-note { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.78rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--muted); line-height: 1.5; }
+  .error-banner { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem;
+    background: rgba(220, 38, 38, 0.08); border: 1px solid var(--danger); color: var(--fg); }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+    gap: 20px; align-content: start; align-items: start; }
+  .chart-title { font-size: 0.85rem; color: var(--muted); margin: 0 0 6px; }
+  .chart-placeholder { padding: 40px 16px; text-align: center; color: var(--muted);
+    border: 1px dashed var(--border); border-radius: 10px; font-size: 0.9rem; }
+  svg { width: 100%; height: auto; overflow: visible; }
+  .axis-label { font-size: 10px; fill: var(--muted); }
+  .axis-unit-label { font-size: 10px; fill: var(--fg); font-weight: 600; }
+  .legend { display: flex; gap: 16px; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .subpanel { margin-top: 20px; }
+  .subpanel > label { margin-bottom: 4px; font-weight: 600; color: var(--fg); }
+  .subpanel-hint { font-size: 0.78rem; color: var(--muted); margin: 0 0 10px; }
+  .field-group { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px 12px;
+    margin: 0 0 10px; }
+  .field-group legend { padding: 0 4px; font-size: 0.78rem; color: var(--muted); }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .field label { margin-bottom: 3px; font-size: 0.78rem; }
+  .field label code { font-size: 0.72rem; color: var(--muted); }
+  .field input { width: 100%; box-sizing: border-box; padding: 5px 7px;
+    border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    font-variant-numeric: tabular-nums; }
+  .field input.invalid { border-color: var(--danger); }
+  .field input:disabled { opacity: 0.45; background: var(--panel); cursor: not-allowed; }
+  .radio-label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem;
+    color: var(--fg); margin-bottom: 8px; cursor: pointer; }
+  .radio-label input { width: auto; }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .reset-btn { font-size: 0.78rem; padding: 6px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg); cursor: pointer; }
+  .reset-btn:hover { background: var(--panel); }
+</style>
+</head>
+<body>
+<h1>QLC / TLC bit-cost 계산기</h1>
+<p class="sub">모든 fab 파라미터를 이 화면에서 직접 입력할 수 있는 완전한
+클라이언트사이드 계산기입니다 — 값은 서버로 전송되지 않고 브라우저 안에서만 계산됩니다.
+슬라이더로 QLC:TLC 생산 비율을 조절하면, 각 라인이 자기 자신의 100% max capa를
+기준으로 그 비율만큼만 가동한다고 보고 콤보와 분리 생산 두 시나리오의 bit 생산량과
+bit당 비용이 실시간으로 나란히 갱신됩니다 (네 라인의 max capa는 서로 다른 값일 수
+있으며 하나의 공유 풀이 아닙니다).</p>
+<p class="sub" id="introStats"></p>
+<div class="sample-banner" id="sampleBanner">샘플 데이터로 미리 채워졌습니다 — 실제 fab 값을 입력하려면 아래 &quot;전체 비우기&quot; 버튼을 누르세요.</div>
+<div class="layout">
+  <div class="panel">
+    <label for="ratio">QLC:TLC 생산 비율</label>
+    <input id="ratio" type="range" min="0" max="100" step="5" value="50">
+    <div class="ratio-readout"><span class="qlc" id="qlcPct"></span> : <span class="tlc" id="tlcPct"></span></div>
+
+    <div class="subpanel" id="yieldBasisPanel">
+      <label>기준 시점 (아래 Bit 생산량/Cost 그래프 2개 + 표의 Bit 생산량·Cost/bit 수치 전용)</label>
+      <p class="subpanel-hint">5년/1년 누적, 수율 램프업 그래프, crossover 판정(아래 판정 문구)에는
+      영향을 주지 않습니다 — 그 값들은 이 토글과 무관하게 항상 성숙 수율 기준입니다.</p>
+      <label class="radio-label"><input type="radio" name="yieldBasis" id="yieldBasisMature" value="mature" checked> 성숙 수율 기준 (기본값)</label>
+      <label class="radio-label"><input type="radio" name="yieldBasis" id="yieldBasisMonth" value="month"> 특정 개월 기준</label>
+      <label for="basisMonth">기준 개월 (생산 시작 후 경과 개월)</label>
+      <input id="basisMonth" type="range" min="1" max="60" step="1" value="12">
+      <div class="ratio-readout" id="basisMonthReadout" style="font-size:1rem;margin:4px 0 8px;"></div>
+      <div class="dev-cost-note" id="basisYieldNote"></div>
+    </div>
+
+    <table>
+      <tr><td colspan="2" style="padding-top:10px;color:var(--muted)">콤보 생산</td></tr>
+      <tr><td>Wafer/월 (QLC 레시피, combo_qlc_max_capa 기준)</td><td class="val" id="waferQlcCombo"></td></tr>
+      <tr><td>Wafer/월 (TLC 레시피, combo_tlc_max_capa 기준)</td><td class="val" id="waferTlcCombo"></td></tr>
+      <tr><td>Bit 생산량 (<span class="unit-bit"></span>)</td><td class="val" id="comboBit"></td></tr>
+      <tr><td>Total cost (<span class="unit-currency"></span>, 개발비 포함)</td><td class="val" id="comboCost"></td></tr>
+      <tr><td>Cost / bit</td><td class="val" id="comboCostPerBit"></td></tr>
+      <tr><td>1년 누적 Bit 생산량 (총량/판매용, 억GB)</td><td class="val" id="comboOneYearBit"></td></tr>
+      <tr><td>5년 누적 Bit 생산량 (총량/판매용, 억GB)</td><td class="val" id="comboFiveYearBit"></td></tr>
+      <tr><td colspan="2" style="padding-top:10px;color:var(--muted)">분리 생산</td></tr>
+      <tr><td>Wafer/월 (QLC 라인, qlc_max_capa 기준)</td><td class="val" id="waferQlcDed"></td></tr>
+      <tr><td>Wafer/월 (TLC 라인, tlc_max_capa 기준)</td><td class="val" id="waferTlcDed"></td></tr>
+      <tr><td>Bit 생산량 (<span class="unit-bit"></span>)</td><td class="val" id="dedBit"></td></tr>
+      <tr><td>Total cost (<span class="unit-currency"></span>, 개발비 포함)</td><td class="val" id="dedCost"></td></tr>
+      <tr><td>Cost / bit</td><td class="val" id="dedCostPerBit"></td></tr>
+      <tr><td>1년 누적 Bit 생산량 (총량/판매용, 억GB)</td><td class="val" id="dedOneYearBit"></td></tr>
+      <tr><td>5년 누적 Bit 생산량 (총량/판매용, 억GB)</td><td class="val" id="dedFiveYearBit"></td></tr>
+    </table>
+    <div class="verdict" id="verdict"></div>
+    <div class="dev-cost-note" id="devCostNote"></div>
+    <div class="dev-cost-note" id="erInfoNote"></div>
+    <div class="dev-cost-note" id="fullBuildoutNote"></div>
+    <div class="error-banner" id="paramErrors" role="alert" style="display:none"></div>
+
+    <div class="subpanel" id="costModePanel">
+      <label>원가 계산 모드</label>
+      <p class="subpanel-hint">"GB당 원가 직접 입력"을 고르면 투자비/개발비 입력은
+      비활성화되고 계산에 쓰이지 않습니다. bit 생산량 계산(및 그 그래프)은 이 모드와
+      무관하게 항상 물리 모델(density/gross_die/수율/max capa)을 사용합니다.</p>
+      <label class="radio-label"><input type="radio" name="costMode" id="costModeModel" value="model"> 모델 기반 계산 (투자비/density/수율/개발비 등 반영)</label>
+      <label class="radio-label"><input type="radio" name="costMode" id="costModeDirect" value="direct"> GB당 원가 직접 입력 (cent/GB)</label>
+      <div class="field-grid" id="directCostFields">
+        <div class="field">
+          <label for="comboDirectCostInput">콤보 GB당 원가 <code>combo_direct_cost_per_gb</code> (cent/GB)</label>
+          <input id="comboDirectCostInput" type="number" step="any" min="0" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="dedicatedDirectCostInput">분리 GB당 원가 <code>dedicated_direct_cost_per_gb</code> (cent/GB)</label>
+          <input id="dedicatedDirectCostInput" type="number" step="any" min="0" inputmode="decimal">
+        </div>
+      </div>
+    </div>
+
+    <div class="subpanel" id="paramsPanel">
+      <label>파라미터 입력 (fab 파라미터)</label>
+      <p class="subpanel-hint">외부로 반출할 수 없는 실제 fab 수치를 이 화면에서 바로
+      입력하세요. 비워두면 sweep이 계산되지 않고 위에 어떤 값이 비었는지 표시됩니다.</p>
+      <fieldset class="field-group" id="group-dedicated-qlc">
+<legend>QLC 전용 라인 (분리 생산)</legend>
+<div class="field-grid">
+<div class="field"><label for="param_qlc_capex_per_wafer">투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화 <code>qlc_capex_per_wafer</code></label><input id="param_qlc_capex_per_wafer" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_qlc_density">Density (Gb/Wafer) <code>qlc_density</code></label><input id="param_qlc_density" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_qlc_gross_die">Grossdie/Wafer <code>qlc_gross_die</code></label><input id="param_qlc_gross_die" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_qlc_mature_yield">성숙 수율 (%, 완전히 램프업된 이후) <code>qlc_mature_yield</code></label><input id="param_qlc_mature_yield" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_qlc_yield_ramp_coef">수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달) <code>qlc_yield_ramp_coef</code></label><input id="param_qlc_yield_ramp_coef" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_qlc_max_capa">Max Wafer capa (QLC 전용 라인 100% 가동시, wafer/월) <code>qlc_max_capa</code></label><input id="param_qlc_max_capa" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+<fieldset class="field-group" id="group-dedicated-tlc">
+<legend>TLC 전용 라인 (분리 생산)</legend>
+<div class="field-grid">
+<div class="field"><label for="param_tlc_capex_per_wafer">투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화 <code>tlc_capex_per_wafer</code></label><input id="param_tlc_capex_per_wafer" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_tlc_density">Density (Gb/Wafer) <code>tlc_density</code></label><input id="param_tlc_density" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_tlc_gross_die">Grossdie/Wafer <code>tlc_gross_die</code></label><input id="param_tlc_gross_die" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_tlc_mature_yield">성숙 수율 (%, 완전히 램프업된 이후) <code>tlc_mature_yield</code></label><input id="param_tlc_mature_yield" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_tlc_yield_ramp_coef">수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달) <code>tlc_yield_ramp_coef</code></label><input id="param_tlc_yield_ramp_coef" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_tlc_max_capa">Max Wafer capa (TLC 전용 라인 100% 가동시, wafer/월) <code>tlc_max_capa</code></label><input id="param_tlc_max_capa" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+<fieldset class="field-group" id="group-combo-shared">
+<legend>콤보 라인 공통 (QLC·TLC 레시피 공유)</legend>
+<div class="field-grid">
+<div class="field"><label for="param_combo_capex_per_wafer">투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화 <code>combo_capex_per_wafer</code></label><input id="param_combo_capex_per_wafer" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_gross_die">Grossdie/Wafer <code>combo_gross_die</code></label><input id="param_combo_gross_die" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+<fieldset class="field-group" id="group-combo-qlc">
+<legend>콤보 — QLC 레시피</legend>
+<div class="field-grid">
+<div class="field"><label for="param_combo_qlc_density">Density (Gb/Wafer) <code>combo_qlc_density</code></label><input id="param_combo_qlc_density" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_qlc_mature_yield">성숙 수율 (%, 완전히 램프업된 이후) <code>combo_qlc_mature_yield</code></label><input id="param_combo_qlc_mature_yield" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_qlc_yield_ramp_coef">수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달) <code>combo_qlc_yield_ramp_coef</code></label><input id="param_combo_qlc_yield_ramp_coef" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_qlc_max_capa">Max Wafer capa (콤보가 QLC 레시피로 100% 가동시, wafer/월) <code>combo_qlc_max_capa</code></label><input id="param_combo_qlc_max_capa" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+<fieldset class="field-group" id="group-combo-tlc">
+<legend>콤보 — TLC 레시피</legend>
+<div class="field-grid">
+<div class="field"><label for="param_combo_tlc_density">Density (Gb/Wafer) <code>combo_tlc_density</code></label><input id="param_combo_tlc_density" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_tlc_mature_yield">성숙 수율 (%, 완전히 램프업된 이후) <code>combo_tlc_mature_yield</code></label><input id="param_combo_tlc_mature_yield" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_tlc_yield_ramp_coef">수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달) <code>combo_tlc_yield_ramp_coef</code></label><input id="param_combo_tlc_yield_ramp_coef" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_tlc_max_capa">Max Wafer capa (콤보가 TLC 레시피로 100% 가동시, wafer/월) <code>combo_tlc_max_capa</code></label><input id="param_combo_tlc_max_capa" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+<fieldset class="field-group" id="group-er-wafer">
+<legend>ER(엔지니어링 런) wafer 소모량 — 월간 소모 RATE, 원가 계산 모드와 무관하게 항상 bit 생산량(판매용/총량 split)에 반영</legend>
+<div class="field-grid">
+<div class="field"><label for="param_er_wafer_combo">월간 ER wafer 소모량 (콤보, wafer/월) — 콤보 QLC·TLC 레시피 각각 자기 ER 기간(t95) 동안 독립적으로 소모 <code>er_wafer_combo</code></label><input id="param_er_wafer_combo" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_er_wafer_dedicated">월간 ER wafer 소모량 (분리, wafer/월) — 분리 QLC·TLC 라인 각각 자기 ER 기간(t95) 동안 독립적으로 소모 <code>er_wafer_dedicated</code></label><input id="param_er_wafer_dedicated" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+<fieldset class="field-group" id="group-dev-cost">
+<legend>1회성 개발비 — 인력 / Mask 만 (ER wafer는 이제 bit 생산량 모델의 일부이므로 별도 그룹, GB당 원가 직접 입력 모드에서는 이 그룹 전부 비활성화)</legend>
+<div class="field-grid">
+<div class="field"><label for="param_combo_headcount">필요 인력 명 수 (콤보 개발시) <code>combo_headcount</code></label><input id="param_combo_headcount" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_dedicated_headcount">필요 인력 명 수 (분리 개발시) <code>dedicated_headcount</code></label><input id="param_dedicated_headcount" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_combo_mask_count">소모 Mask 매수 (콤보 개발시) <code>combo_mask_count</code></label><input id="param_combo_mask_count" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_dedicated_mask_count">소모 Mask 매수 (분리 개발시) <code>dedicated_mask_count</code></label><input id="param_dedicated_mask_count" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_coef_cost_per_headcount">인력 1명당 환산 비용 (콤보·분리 공통 계수, currency_unit/명) <code>coef_cost_per_headcount</code></label><input id="param_coef_cost_per_headcount" type="number" step="any" inputmode="decimal"></div>
+<div class="field"><label for="param_coef_cost_per_mask">Mask 1매당 환산 비용 (콤보·분리 공통 계수, currency_unit/매) <code>coef_cost_per_mask</code></label><input id="param_coef_cost_per_mask" type="number" step="any" inputmode="decimal"></div>
+</div>
+</fieldset>
+    </div>
+
+    <div class="subpanel" id="displayPanel">
+      <label>표시 설정</label>
+      <div class="field-grid">
+        <div class="field">
+          <label for="currencyUnitInput">비용 단위 (currency_unit)</label>
+          <input id="currencyUnitInput" type="text">
+        </div>
+        <div class="field">
+          <label for="bitUnitInput">bit 단위 (bit_unit)</label>
+          <input id="bitUnitInput" type="text">
+        </div>
+        <div class="field">
+          <label for="ratioStepInput">슬라이더 스윕 간격 % (ratio_step)</label>
+          <input id="ratioStepInput" type="number" min="1" max="100" step="1">
+        </div>
+        <div class="field">
+          <label for="exchangeRateInput">환율 (원/달러, exchange_rate_krw_per_usd) — Cost 그래프 cent/GB 환산 전용 (model 모드에서만 사용)</label>
+          <input id="exchangeRateInput" type="number" min="1" step="any">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="reset-btn" id="resetAll" type="button">불러온 초기값으로 전체 재설정</button>
+      <button class="reset-btn" id="clearAll" type="button">전체 비우기</button>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="chart-placeholder" id="chartPlaceholder">모든 파라미터를 올바르게 입력하면 차트가 표시됩니다.</div>
+    <div class="panel">
+      <p class="chart-title" id="chartBitTitle">Bit 생산량 vs QLC 비율 (억GB)</p>
+      <svg id="chartBit" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--combo)"></i>콤보</span>
+        <span><i class="swatch" style="background:var(--dedicated)"></i>분리 생산</span>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="chart-title" id="chartCostTitle">Cost / GB vs QLC 비율 (cent/GB, 낮을수록 유리)</p>
+      <svg id="chartCost" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--combo)"></i>콤보</span>
+        <span><i class="swatch" style="background:var(--dedicated)"></i>분리 생산</span>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="chart-title" id="chartFiveYearBitTitle">5년 누적 Bit 생산량 vs QLC 비율 (억GB, 1개월차부터 각 라인/레시피가 자기 수율 램프업 곡선을 따라 실제 생산, 총량 기준)</p>
+      <svg id="chartFiveYearBit" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--combo)"></i>콤보</span>
+        <span><i class="swatch" style="background:var(--dedicated)"></i>분리 생산</span>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="chart-title" id="chartFiveYearCostTitle">5년 누적 Cost/GB vs QLC 비율 (cent/GB, 낮을수록 유리, 1회성 개발비 1회 포함)</p>
+      <svg id="chartFiveYearCost" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--combo)"></i>콤보</span>
+        <span><i class="swatch" style="background:var(--dedicated)"></i>분리 생산</span>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="chart-title">QLC 수율 램프업 (%, x축 = 생산 시작 후 경과 개월) — QLC:TLC 비율과 무관한 고정 참고용</p>
+      <svg id="chartYieldRampQlc" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--dedicated)"></i>분리 QLC 전용 라인</span>
+        <span><i class="swatch" style="background:var(--combo)"></i>콤보 QLC 레시피</span>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="chart-title">TLC 수율 램프업 (%, x축 = 생산 시작 후 경과 개월) — QLC:TLC 비율과 무관한 고정 참고용</p>
+      <svg id="chartYieldRampTlc" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--dedicated)"></i>분리 TLC 전용 라인</span>
+        <span><i class="swatch" style="background:var(--combo)"></i>콤보 TLC 레시피</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--
+  이 파일을 텍스트 에디터(메모장 등)로 열었다면: 아래 INITIAL_PAYLOAD 의
+  "params" 블록 안에 있는 숫자(또는 currency_unit/bit_unit/cost_mode 등
+  문자열)를 직접 고친 뒤 저장하고, 이 html 파일을 다시 열면 그 값이
+  초기값(입력창 기본값)으로 반영됩니다. 각 줄 끝의 "// 설명"은 그 파라미터의
+  뜻과 단위를 적어둔 주석입니다 — 값만 바꾸고 줄의 따옴표(")와 콤마(,) 구조는
+  그대로 두세요. "params" 아래의 sweep/crossover/dev_cost/best_* 항목은 이
+  파일을 만들 때 계산했던 결과를 참고용으로 남겨둔 것일 뿐입니다 — 브라우저에서
+  열리면 화면은 이 값을 다시 읽지 않고 항상 params 값으로부터 새로 계산하므로,
+  그 항목들을 고쳐도 계산 결과에는 아무 영향이 없습니다.
+-->
+<script id="payload">
+var INITIAL_PAYLOAD = {
+  "params": {
+    "qlc_capex_per_wafer": 6200.0,  // 투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화
+    "qlc_density": 48.0,  // Density (Gb/Wafer)
+    "qlc_gross_die": 520.0,  // Grossdie/Wafer
+    "qlc_mature_yield": 82.0,  // 성숙 수율 (%, 완전히 램프업된 이후)
+    "qlc_yield_ramp_coef": 0.15,  // 수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)
+    "qlc_max_capa": 85000.0,  // Max Wafer capa (QLC 전용 라인 100% 가동시, wafer/월)
+    "tlc_capex_per_wafer": 5800.0,  // 투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화
+    "tlc_density": 32.0,  // Density (Gb/Wafer)
+    "tlc_gross_die": 520.0,  // Grossdie/Wafer
+    "tlc_mature_yield": 88.0,  // 성숙 수율 (%, 완전히 램프업된 이후)
+    "tlc_yield_ramp_coef": 0.15,  // 수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)
+    "tlc_max_capa": 75000.0,  // Max Wafer capa (TLC 전용 라인 100% 가동시, wafer/월)
+    "combo_capex_per_wafer": 5000.0,  // 투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화
+    "combo_gross_die": 520.0,  // Grossdie/Wafer
+    "combo_qlc_density": 48.0,  // Density (Gb/Wafer)
+    "combo_qlc_mature_yield": 80.0,  // 성숙 수율 (%, 완전히 램프업된 이후)
+    "combo_qlc_yield_ramp_coef": 0.2,  // 수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)
+    "combo_qlc_max_capa": 80000.0,  // Max Wafer capa (콤보가 QLC 레시피로 100% 가동시, wafer/월)
+    "combo_tlc_density": 20.0,  // Density (Gb/Wafer)
+    "combo_tlc_mature_yield": 78.0,  // 성숙 수율 (%, 완전히 램프업된 이후)
+    "combo_tlc_yield_ramp_coef": 0.1,  // 수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)
+    "combo_tlc_max_capa": 78000.0,  // Max Wafer capa (콤보가 TLC 레시피로 100% 가동시, wafer/월)
+    "er_wafer_combo": 40.0,  // 월간 ER wafer 소모량 (콤보, wafer/월) — 콤보 QLC·TLC 레시피 각각 자기 ER 기간(t95) 동안 독립적으로 소모
+    "er_wafer_dedicated": 60.0,  // 월간 ER wafer 소모량 (분리, wafer/월) — 분리 QLC·TLC 라인 각각 자기 ER 기간(t95) 동안 독립적으로 소모
+    "combo_headcount": 15.0,  // 필요 인력 명 수 (콤보 개발시)
+    "dedicated_headcount": 25.0,  // 필요 인력 명 수 (분리 개발시)
+    "combo_mask_count": 8.0,  // 소모 Mask 매수 (콤보 개발시)
+    "dedicated_mask_count": 14.0,  // 소모 Mask 매수 (분리 개발시)
+    "coef_cost_per_headcount": 2.0,  // 인력 1명당 환산 비용 (콤보·분리 공통 계수, currency_unit/명)
+    "coef_cost_per_mask": 3.0,  // Mask 1매당 환산 비용 (콤보·분리 공통 계수, currency_unit/매)
+    "currency_unit": "억원",  // 비용 표시 단위 (자유 텍스트, 예: 억원/$M — 표의 Cost 행에만 쓰임. Cost 그래프 y축은 항상 cent/GB 고정)
+    "bit_unit": "Gb",  // bit 표시 단위 (자유 텍스트, 표의 Bit 생산량 행에만 쓰임 — 그래프 y축은 항상 GB 고정)
+    "ratio_step": "5",  // 슬라이더 스윕 간격 % (1~100)
+    "exchange_rate_krw_per_usd": "1300",  // 환율 (원/달러) — Cost 그래프의 cent/GB 환산에만 쓰임 (cost_mode=model 일 때만; direct 모드에서는 미사용)
+    "cost_mode": "model",  // 원가 계산 모드 (model=투자비/개발비 모델 기반 계산, direct=GB당 원가 직접 입력) — bit 생산량 계산에는 영향 없음
+    "combo_direct_cost_per_gb": "0",  // 콤보 GB당 원가 직접 입력값 (cent/GB) — cost_mode=direct 일 때만 사용
+    "dedicated_direct_cost_per_gb": "0"  // 분리 GB당 원가 직접 입력값 (cent/GB) — cost_mode=direct 일 때만 사용
+  },
+  "sweep": [
+    {
+      "qlc_ratio": 0,
+      "tlc_ratio": 100,
+      "wafer_qlc_dedicated": 0.0,
+      "wafer_tlc_dedicated": 75000.0,
+      "wafer_qlc_combo": 0.0,
+      "wafer_tlc_combo": 78000.0,
+      "combo_bit_total": 632736000.0,
+      "combo_cost_total": 39054.0,
+      "combo_cost_per_bit": 6.172242451828251e-05,
+      "dedicated_bit_total": 1098240000.0,
+      "dedicated_cost_total": 43592.0,
+      "dedicated_cost_per_bit": 3.969259906759907e-05,
+      "combo_bit_total_gb": 79092000.0,
+      "dedicated_bit_total_gb": 137280000.0,
+      "combo_cost_per_gb": 0.0004937793961462601,
+      "dedicated_cost_per_gb": 0.00031754079254079254,
+      "five_year_combo_bit_total": 31962808905.881397,
+      "five_year_combo_bit_total_gb": 3995351113.2351747,
+      "five_year_combo_sale_bit_total": 31956006163.203568,
+      "five_year_combo_sale_bit_total_gb": 3994500770.400446,
+      "five_year_combo_cost_total": 2340054.0,
+      "five_year_combo_cost_per_bit": 7.321177581390265e-05,
+      "five_year_combo_cost_per_gb": 0.0005856942065112212,
+      "five_year_dedicated_bit_total": 59109034629.2085,
+      "five_year_dedicated_bit_total_gb": 7388629328.651063,
+      "five_year_dedicated_sale_bit_total": 59096621459.375916,
+      "five_year_dedicated_sale_bit_total_gb": 7387077682.421989,
+      "five_year_dedicated_cost_total": 2610092.0,
+      "five_year_dedicated_cost_per_bit": 4.415724290496589e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003532579432397271,
+      "one_year_combo_bit_total": 3388631949.0554686,
+      "one_year_combo_bit_total_gb": 423578993.63193357,
+      "one_year_combo_sale_bit_total": 3386894189.081594,
+      "one_year_combo_sale_bit_total_gb": 423361773.63519925,
+      "one_year_combo_cost_total": 468054.0,
+      "one_year_combo_cost_per_bit": 0.00013812476746861315,
+      "one_year_combo_cost_per_gb": 0.0011049981397489052,
+      "one_year_dedicated_bit_total": 7514428932.381068,
+      "one_year_dedicated_bit_total_gb": 939303616.5476335,
+      "one_year_dedicated_sale_bit_total": 7508417389.235164,
+      "one_year_dedicated_sale_bit_total_gb": 938552173.6543955,
+      "one_year_dedicated_cost_total": 522092.0,
+      "one_year_dedicated_cost_per_bit": 6.947859973100667e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005558287978480533
+    },
+    {
+      "qlc_ratio": 5,
+      "tlc_ratio": 95,
+      "wafer_qlc_dedicated": 4250.0,
+      "wafer_tlc_dedicated": 71250.0,
+      "wafer_qlc_combo": 4000.0,
+      "wafer_tlc_combo": 74100.0,
+      "combo_bit_total": 680971200.0,
+      "combo_cost_total": 39104.0,
+      "combo_cost_per_bit": 5.742386755856929e-05,
+      "dedicated_bit_total": 1130313600.0,
+      "dedicated_cost_total": 44052.0,
+      "dedicated_cost_per_bit": 3.8973254855997486e-05,
+      "combo_bit_total_gb": 85121400.0,
+      "dedicated_bit_total_gb": 141289200.0,
+      "combo_cost_per_gb": 0.00045939094046855433,
+      "dedicated_cost_per_gb": 0.0003117860388479799,
+      "five_year_combo_bit_total": 34796236363.76074,
+      "five_year_combo_bit_total_gb": 4349529545.470093,
+      "five_year_combo_sale_bit_total": 34780880755.22005,
+      "five_year_combo_sale_bit_total_gb": 4347610094.402506,
+      "five_year_combo_cost_total": 2343054.0,
+      "five_year_combo_cost_per_bit": 6.733642039632258e-05,
+      "five_year_combo_cost_per_gb": 0.0005386913631705806,
+      "five_year_dedicated_bit_total": 60835287117.81152,
+      "five_year_dedicated_bit_total_gb": 7604410889.72644,
+      "five_year_dedicated_sale_bit_total": 60805523721.96294,
+      "five_year_dedicated_sale_bit_total_gb": 7600690465.245367,
+      "five_year_dedicated_cost_total": 2637692.0,
+      "five_year_dedicated_cost_per_bit": 4.335792802114892e-05,
+      "five_year_dedicated_cost_per_gb": 0.00034686342416919135,
+      "one_year_combo_bit_total": 3849636931.174952,
+      "one_year_combo_bit_total_gb": 481204616.396869,
+      "one_year_combo_sale_bit_total": 3841594805.405355,
+      "one_year_combo_sale_bit_total_gb": 480199350.6756694,
+      "one_year_combo_cost_total": 468654.0,
+      "one_year_combo_cost_per_bit": 0.00012173979218787305,
+      "one_year_combo_cost_per_gb": 0.0009739183375029844,
+      "one_year_dedicated_bit_total": 7733884413.701742,
+      "one_year_dedicated_bit_total_gb": 966735551.7127178,
+      "one_year_dedicated_sale_bit_total": 7719470372.74963,
+      "one_year_dedicated_sale_bit_total_gb": 964933796.5937037,
+      "one_year_dedicated_cost_total": 527612.0,
+      "one_year_dedicated_cost_per_bit": 6.822082821217962e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005457666256974369
+    },
+    {
+      "qlc_ratio": 10,
+      "tlc_ratio": 90,
+      "wafer_qlc_dedicated": 8500.0,
+      "wafer_tlc_dedicated": 67500.0,
+      "wafer_qlc_combo": 8000.0,
+      "wafer_tlc_combo": 70200.0,
+      "combo_bit_total": 729206400.0,
+      "combo_cost_total": 39154.0,
+      "combo_cost_per_bit": 5.369398842357939e-05,
+      "dedicated_bit_total": 1162387200.0,
+      "dedicated_cost_total": 44512.0,
+      "dedicated_cost_per_bit": 3.8293608188390235e-05,
+      "combo_bit_total_gb": 91150800.0,
+      "dedicated_bit_total_gb": 145298400.0,
+      "combo_cost_per_gb": 0.0004295519073886351,
+      "dedicated_cost_per_gb": 0.0003063488655071219,
+      "five_year_combo_bit_total": 37629663821.64008,
+      "five_year_combo_bit_total_gb": 4703707977.70501,
+      "five_year_combo_sale_bit_total": 37614308213.09939,
+      "five_year_combo_sale_bit_total_gb": 4701788526.6374235,
+      "five_year_combo_cost_total": 2346054.0,
+      "five_year_combo_cost_per_bit": 6.234586657802748e-05,
+      "five_year_combo_cost_per_gb": 0.0004987669326242198,
+      "five_year_dedicated_bit_total": 62561539606.414536,
+      "five_year_dedicated_bit_total_gb": 7820192450.801817,
+      "five_year_dedicated_sale_bit_total": 62531776210.56595,
+      "five_year_dedicated_sale_bit_total_gb": 7816472026.320744,
+      "five_year_dedicated_cost_total": 2665292.0,
+      "five_year_dedicated_cost_per_bit": 4.260272392220225e-05,
+      "five_year_dedicated_cost_per_gb": 0.000340821791377618,
+      "one_year_combo_bit_total": 4310641913.2944355,
+      "one_year_combo_bit_total_gb": 538830239.1618044,
+      "one_year_combo_sale_bit_total": 4302599787.5248375,
+      "one_year_combo_sale_bit_total_gb": 537824973.4406047,
+      "one_year_combo_cost_total": 469254.0,
+      "one_year_combo_cost_per_bit": 0.00010885942498558635,
+      "one_year_combo_cost_per_gb": 0.0008708753998846908,
+      "one_year_dedicated_bit_total": 7953339895.022417,
+      "one_year_dedicated_bit_total_gb": 994167486.8778021,
+      "one_year_dedicated_sale_bit_total": 7938925854.070305,
+      "one_year_dedicated_sale_bit_total_gb": 992365731.7587881,
+      "one_year_dedicated_cost_total": 533132.0,
+      "one_year_dedicated_cost_per_bit": 6.703246774775208e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005362597419820166
+    },
+    {
+      "qlc_ratio": 15,
+      "tlc_ratio": 85,
+      "wafer_qlc_dedicated": 12750.0,
+      "wafer_tlc_dedicated": 63750.0,
+      "wafer_qlc_combo": 12000.0,
+      "wafer_tlc_combo": 66300.0,
+      "combo_bit_total": 777441600.0,
+      "combo_cost_total": 39204.0,
+      "combo_cost_per_bit": 5.042693882087092e-05,
+      "dedicated_bit_total": 1194460800.0,
+      "dedicated_cost_total": 44972.0,
+      "dedicated_cost_per_bit": 3.76504611955453e-05,
+      "combo_bit_total_gb": 97180200.0,
+      "dedicated_bit_total_gb": 149307600.0,
+      "combo_cost_per_gb": 0.00040341551056696735,
+      "dedicated_cost_per_gb": 0.0003012036895643624,
+      "five_year_combo_bit_total": 40463091279.519424,
+      "five_year_combo_bit_total_gb": 5057886409.939928,
+      "five_year_combo_sale_bit_total": 40447735670.97873,
+      "five_year_combo_sale_bit_total_gb": 5055966958.872341,
+      "five_year_combo_cost_total": 2349054.0,
+      "five_year_combo_cost_per_bit": 5.8054239696436246e-05,
+      "five_year_combo_cost_per_gb": 0.00046443391757148997,
+      "five_year_dedicated_bit_total": 64287792095.01756,
+      "five_year_dedicated_bit_total_gb": 8035974011.877195,
+      "five_year_dedicated_sale_bit_total": 64258028699.16897,
+      "five_year_dedicated_sale_bit_total_gb": 8032253587.396121,
+      "five_year_dedicated_cost_total": 2692892.0,
+      "five_year_dedicated_cost_per_bit": 4.188807722654244e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003351046178123395,
+      "one_year_combo_bit_total": 4771646895.413918,
+      "one_year_combo_bit_total_gb": 596455861.9267397,
+      "one_year_combo_sale_bit_total": 4763604769.644321,
+      "one_year_combo_sale_bit_total_gb": 595450596.2055402,
+      "one_year_combo_cost_total": 469854.0,
+      "one_year_combo_cost_per_bit": 9.846788966123664e-05,
+      "one_year_combo_cost_per_gb": 0.0007877431172898931,
+      "one_year_dedicated_bit_total": 8172795376.343091,
+      "one_year_dedicated_bit_total_gb": 1021599422.0428864,
+      "one_year_dedicated_sale_bit_total": 8158381335.390978,
+      "one_year_dedicated_sale_bit_total_gb": 1019797666.9238722,
+      "one_year_dedicated_cost_total": 538652.0,
+      "one_year_dedicated_cost_per_bit": 6.590792687153013e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005272634149722411
+    },
+    {
+      "qlc_ratio": 20,
+      "tlc_ratio": 80,
+      "wafer_qlc_dedicated": 17000.0,
+      "wafer_tlc_dedicated": 60000.0,
+      "wafer_qlc_combo": 16000.0,
+      "wafer_tlc_combo": 62400.0,
+      "combo_bit_total": 825676800.0,
+      "combo_cost_total": 39254.0,
+      "combo_cost_per_bit": 4.754160465693114e-05,
+      "dedicated_bit_total": 1226534400.0,
+      "dedicated_cost_total": 45432.0,
+      "dedicated_cost_per_bit": 3.7040950502488963e-05,
+      "combo_bit_total_gb": 103209600.0,
+      "dedicated_bit_total_gb": 153316800.0,
+      "combo_cost_per_gb": 0.0003803328372554491,
+      "dedicated_cost_per_gb": 0.0002963276040199117,
+      "five_year_combo_bit_total": 43296518737.39877,
+      "five_year_combo_bit_total_gb": 5412064842.174847,
+      "five_year_combo_sale_bit_total": 43281163128.85808,
+      "five_year_combo_sale_bit_total_gb": 5410145391.10726,
+      "five_year_combo_cost_total": 2352054.0,
+      "five_year_combo_cost_per_bit": 5.4324321414052556e-05,
+      "five_year_combo_cost_per_gb": 0.00043459457131242045,
+      "five_year_dedicated_bit_total": 66014044583.620575,
+      "five_year_dedicated_bit_total_gb": 8251755572.952572,
+      "five_year_dedicated_sale_bit_total": 65984281187.77199,
+      "five_year_dedicated_sale_bit_total_gb": 8248035148.4714985,
+      "five_year_dedicated_cost_total": 2720492.0,
+      "five_year_dedicated_cost_per_bit": 4.1210806233117994e-05,
+      "five_year_dedicated_cost_per_gb": 0.00032968644986494395,
+      "one_year_combo_bit_total": 5232651877.5334015,
+      "one_year_combo_bit_total_gb": 654081484.6916752,
+      "one_year_combo_sale_bit_total": 5224609751.763804,
+      "one_year_combo_sale_bit_total_gb": 653076218.9704756,
+      "one_year_combo_cost_total": 470454.0,
+      "one_year_combo_cost_per_bit": 8.990737603239247e-05,
+      "one_year_combo_cost_per_gb": 0.0007192590082591398,
+      "one_year_dedicated_bit_total": 8392250857.663765,
+      "one_year_dedicated_bit_total_gb": 1049031357.2079706,
+      "one_year_dedicated_sale_bit_total": 8377836816.711653,
+      "one_year_dedicated_sale_bit_total_gb": 1047229602.0889566,
+      "one_year_dedicated_cost_total": 544172.0,
+      "one_year_dedicated_cost_per_bit": 6.484219897967714e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005187375918374171
+    },
+    {
+      "qlc_ratio": 25,
+      "tlc_ratio": 75,
+      "wafer_qlc_dedicated": 21250.0,
+      "wafer_tlc_dedicated": 56250.0,
+      "wafer_qlc_combo": 20000.0,
+      "wafer_tlc_combo": 58500.0,
+      "combo_bit_total": 873912000.0,
+      "combo_cost_total": 39304.0,
+      "combo_cost_per_bit": 4.4974780069389136e-05,
+      "dedicated_bit_total": 1258608000.0,
+      "dedicated_cost_total": 45892.0,
+      "dedicated_cost_per_bit": 3.646250460826564e-05,
+      "combo_bit_total_gb": 109239000.0,
+      "dedicated_bit_total_gb": 157326000.0,
+      "combo_cost_per_gb": 0.0003597982405551131,
+      "dedicated_cost_per_gb": 0.0002917000368661251,
+      "five_year_combo_bit_total": 46129946195.27811,
+      "five_year_combo_bit_total_gb": 5766243274.409763,
+      "five_year_combo_sale_bit_total": 46114590586.73741,
+      "five_year_combo_sale_bit_total_gb": 5764323823.342176,
+      "five_year_combo_cost_total": 2355054.0,
+      "five_year_combo_cost_per_bit": 5.105260669567104e-05,
+      "five_year_combo_cost_per_gb": 0.00040842085356536834,
+      "five_year_dedicated_bit_total": 67740297072.2236,
+      "five_year_dedicated_bit_total_gb": 8467537134.02795,
+      "five_year_dedicated_sale_bit_total": 67710533676.375015,
+      "five_year_dedicated_sale_bit_total_gb": 8463816709.546877,
+      "five_year_dedicated_cost_total": 2748092.0,
+      "five_year_dedicated_cost_per_bit": 4.056805356300739e-05,
+      "five_year_dedicated_cost_per_gb": 0.00032454442850405913,
+      "one_year_combo_bit_total": 5693656859.6528845,
+      "one_year_combo_bit_total_gb": 711707107.4566106,
+      "one_year_combo_sale_bit_total": 5685614733.883287,
+      "one_year_combo_sale_bit_total_gb": 710701841.7354109,
+      "one_year_combo_cost_total": 471054.0,
+      "one_year_combo_cost_per_bit": 8.273312066591908e-05,
+      "one_year_combo_cost_per_gb": 0.0006618649653273526,
+      "one_year_dedicated_bit_total": 8611706338.98444,
+      "one_year_dedicated_bit_total_gb": 1076463292.373055,
+      "one_year_dedicated_sale_bit_total": 8597292298.032326,
+      "one_year_dedicated_sale_bit_total_gb": 1074661537.2540407,
+      "one_year_dedicated_cost_total": 549692.0,
+      "one_year_dedicated_cost_per_bit": 6.383078780933257e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005106463024746606
+    },
+    {
+      "qlc_ratio": 30,
+      "tlc_ratio": 70,
+      "wafer_qlc_dedicated": 25500.0,
+      "wafer_tlc_dedicated": 52500.0,
+      "wafer_qlc_combo": 24000.0,
+      "wafer_tlc_combo": 54600.0,
+      "combo_bit_total": 922147200.0,
+      "combo_cost_total": 39354.0,
+      "combo_cost_per_bit": 4.267648375443747e-05,
+      "dedicated_bit_total": 1290681600.0,
+      "dedicated_cost_total": 46352.0,
+      "dedicated_cost_per_bit": 3.5912807620407695e-05,
+      "combo_bit_total_gb": 115268400.0,
+      "dedicated_bit_total_gb": 161335200.0,
+      "combo_cost_per_gb": 0.00034141187003549977,
+      "dedicated_cost_per_gb": 0.00028730246096326156,
+      "five_year_combo_bit_total": 48963373653.157455,
+      "five_year_combo_bit_total_gb": 6120421706.644682,
+      "five_year_combo_sale_bit_total": 48948018044.61676,
+      "five_year_combo_sale_bit_total_gb": 6118502255.577095,
+      "five_year_combo_cost_total": 2358054.0,
+      "five_year_combo_cost_per_bit": 4.8159549150019373e-05,
+      "five_year_combo_cost_per_gb": 0.000385276393200155,
+      "five_year_dedicated_bit_total": 69466549560.82663,
+      "five_year_dedicated_bit_total_gb": 8683318695.103329,
+      "five_year_dedicated_sale_bit_total": 69436786164.97803,
+      "five_year_dedicated_sale_bit_total_gb": 8679598270.622253,
+      "five_year_dedicated_cost_total": 2775692.0,
+      "five_year_dedicated_cost_per_bit": 3.995724586219063e-05,
+      "five_year_dedicated_cost_per_gb": 0.00031965796689752504,
+      "one_year_combo_bit_total": 6154661841.7723675,
+      "one_year_combo_bit_total_gb": 769332730.2215459,
+      "one_year_combo_sale_bit_total": 6146619716.00277,
+      "one_year_combo_sale_bit_total_gb": 768327464.5003463,
+      "one_year_combo_cost_total": 471654.0,
+      "one_year_combo_cost_per_bit": 7.663361726859344e-05,
+      "one_year_combo_cost_per_gb": 0.0006130689381487475,
+      "one_year_dedicated_bit_total": 8831161820.305115,
+      "one_year_dedicated_bit_total_gb": 1103895227.5381393,
+      "one_year_dedicated_sale_bit_total": 8816747779.353,
+      "one_year_dedicated_sale_bit_total_gb": 1102093472.419125,
+      "one_year_dedicated_cost_total": 555212.0,
+      "one_year_dedicated_cost_per_bit": 6.286964402842496e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005029571522273997
+    },
+    {
+      "qlc_ratio": 35,
+      "tlc_ratio": 65,
+      "wafer_qlc_dedicated": 29749.999999999996,
+      "wafer_tlc_dedicated": 48750.0,
+      "wafer_qlc_combo": 28000.0,
+      "wafer_tlc_combo": 50700.0,
+      "combo_bit_total": 970382400.0,
+      "combo_cost_total": 39404.0,
+      "combo_cost_per_bit": 4.060667217377397e-05,
+      "dedicated_bit_total": 1322755200.0,
+      "dedicated_cost_total": 46811.99999999999,
+      "dedicated_cost_per_bit": 3.5389768265511256e-05,
+      "combo_bit_total_gb": 121297800.0,
+      "dedicated_bit_total_gb": 165344400.0,
+      "combo_cost_per_gb": 0.00032485337739019174,
+      "dedicated_cost_per_gb": 0.00028311814612409005,
+      "five_year_combo_bit_total": 51796801111.0368,
+      "five_year_combo_bit_total_gb": 6474600138.8796,
+      "five_year_combo_sale_bit_total": 51781445502.4961,
+      "five_year_combo_sale_bit_total_gb": 6472680687.812013,
+      "five_year_combo_cost_total": 2361054.0,
+      "five_year_combo_cost_per_bit": 4.558300801122078e-05,
+      "five_year_combo_cost_per_gb": 0.00036466406408976627,
+      "five_year_dedicated_bit_total": 71192802049.42963,
+      "five_year_dedicated_bit_total_gb": 8899100256.178703,
+      "five_year_dedicated_sale_bit_total": 71163038653.58105,
+      "five_year_dedicated_sale_bit_total_gb": 8895379831.697632,
+      "five_year_dedicated_cost_total": 2803291.9999999995,
+      "five_year_dedicated_cost_per_bit": 3.9376059366980045e-05,
+      "five_year_dedicated_cost_per_gb": 0.00031500847493584036,
+      "one_year_combo_bit_total": 6615666823.8918495,
+      "one_year_combo_bit_total_gb": 826958352.9864812,
+      "one_year_combo_sale_bit_total": 6607624698.122252,
+      "one_year_combo_sale_bit_total_gb": 825953087.2652816,
+      "one_year_combo_cost_total": 472254.0,
+      "one_year_combo_cost_per_bit": 7.138418734971654e-05,
+      "one_year_combo_cost_per_gb": 0.0005710734987977324,
+      "one_year_dedicated_bit_total": 9050617301.625788,
+      "one_year_dedicated_bit_total_gb": 1131327162.7032235,
+      "one_year_dedicated_sale_bit_total": 9036203260.673676,
+      "one_year_dedicated_sale_bit_total_gb": 1129525407.5842094,
+      "one_year_dedicated_cost_total": 560731.9999999999,
+      "one_year_dedicated_cost_per_bit": 6.19551110507428e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004956408884059424
+    },
+    {
+      "qlc_ratio": 40,
+      "tlc_ratio": 60,
+      "wafer_qlc_dedicated": 34000.0,
+      "wafer_tlc_dedicated": 45000.0,
+      "wafer_qlc_combo": 32000.0,
+      "wafer_tlc_combo": 46800.0,
+      "combo_bit_total": 1018617600.0,
+      "combo_cost_total": 39454.0,
+      "combo_cost_per_bit": 3.87328866102451e-05,
+      "dedicated_bit_total": 1354828800.0,
+      "dedicated_cost_total": 47272.0,
+      "dedicated_cost_per_bit": 3.48914933015891e-05,
+      "combo_bit_total_gb": 127327200.0,
+      "dedicated_bit_total_gb": 169353600.0,
+      "combo_cost_per_gb": 0.0003098630928819608,
+      "dedicated_cost_per_gb": 0.0002791319464127128,
+      "five_year_combo_bit_total": 54630228568.916145,
+      "five_year_combo_bit_total_gb": 6828778571.114518,
+      "five_year_combo_sale_bit_total": 54614872960.37546,
+      "five_year_combo_sale_bit_total_gb": 6826859120.046932,
+      "five_year_combo_cost_total": 2364054.0,
+      "five_year_combo_cost_per_bit": 4.327373437615662e-05,
+      "five_year_combo_cost_per_gb": 0.00034618987500925294,
+      "five_year_dedicated_bit_total": 72919054538.03265,
+      "five_year_dedicated_bit_total_gb": 9114881817.254082,
+      "five_year_dedicated_sale_bit_total": 72889291142.18407,
+      "five_year_dedicated_sale_bit_total_gb": 9111161392.773008,
+      "five_year_dedicated_cost_total": 2830892.0,
+      "five_year_dedicated_cost_per_bit": 3.882239036058101e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003105791228846481,
+      "one_year_combo_bit_total": 7076671806.011333,
+      "one_year_combo_bit_total_gb": 884583975.7514167,
+      "one_year_combo_sale_bit_total": 7068629680.241736,
+      "one_year_combo_sale_bit_total_gb": 883578710.030217,
+      "one_year_combo_cost_total": 472854.0,
+      "one_year_combo_cost_per_bit": 6.68186985297708e-05,
+      "one_year_combo_cost_per_gb": 0.0005345495882381665,
+      "one_year_dedicated_bit_total": 9270072782.946463,
+      "one_year_dedicated_bit_total_gb": 1158759097.8683078,
+      "one_year_dedicated_sale_bit_total": 9255658741.99435,
+      "one_year_dedicated_sale_bit_total_gb": 1156957342.7492938,
+      "one_year_dedicated_cost_total": 566252.0,
+      "one_year_dedicated_cost_per_bit": 6.10838785475014e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004886710283800112
+    },
+    {
+      "qlc_ratio": 45,
+      "tlc_ratio": 55,
+      "wafer_qlc_dedicated": 38250.0,
+      "wafer_tlc_dedicated": 41250.0,
+      "wafer_qlc_combo": 36000.0,
+      "wafer_tlc_combo": 42900.0,
+      "combo_bit_total": 1066852800.0,
+      "combo_cost_total": 39504.0,
+      "combo_cost_per_bit": 3.702853852002826e-05,
+      "dedicated_bit_total": 1386902400.0,
+      "dedicated_cost_total": 47732.0,
+      "dedicated_cost_per_bit": 3.4416264619630045e-05,
+      "combo_bit_total_gb": 133356600.0,
+      "dedicated_bit_total_gb": 173362800.0,
+      "combo_cost_per_gb": 0.00029622830816022607,
+      "dedicated_cost_per_gb": 0.00027533011695704036,
+      "five_year_combo_bit_total": 57463656026.79549,
+      "five_year_combo_bit_total_gb": 7182957003.349436,
+      "five_year_combo_sale_bit_total": 57448300418.25479,
+      "five_year_combo_sale_bit_total_gb": 7181037552.281849,
+      "five_year_combo_cost_total": 2367054.0,
+      "five_year_combo_cost_per_bit": 4.119219283395813e-05,
+      "five_year_combo_cost_per_gb": 0.00032953754267166506,
+      "five_year_dedicated_bit_total": 74645307026.63568,
+      "five_year_dedicated_bit_total_gb": 9330663378.32946,
+      "five_year_dedicated_sale_bit_total": 74615543630.7871,
+      "five_year_dedicated_sale_bit_total_gb": 9326942953.848387,
+      "five_year_dedicated_cost_total": 2858492.0,
+      "five_year_dedicated_cost_per_bit": 3.8294329728994274e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003063546378319542,
+      "one_year_combo_bit_total": 7537676788.130816,
+      "one_year_combo_bit_total_gb": 942209598.516352,
+      "one_year_combo_sale_bit_total": 7529634662.361219,
+      "one_year_combo_sale_bit_total_gb": 941204332.7951524,
+      "one_year_combo_cost_total": 473454.0,
+      "one_year_combo_cost_per_bit": 6.281166111361038e-05,
+      "one_year_combo_cost_per_gb": 0.000502493288908883,
+      "one_year_dedicated_bit_total": 9489528264.267136,
+      "one_year_dedicated_bit_total_gb": 1186191033.033392,
+      "one_year_dedicated_sale_bit_total": 9475114223.315023,
+      "one_year_dedicated_sale_bit_total_gb": 1184389277.914378,
+      "one_year_dedicated_cost_total": 571772.0,
+      "one_year_dedicated_cost_per_bit": 6.0252942409477846e-05,
+      "one_year_dedicated_cost_per_gb": 0.00048202353927582277
+    },
+    {
+      "qlc_ratio": 50,
+      "tlc_ratio": 50,
+      "wafer_qlc_dedicated": 42500.0,
+      "wafer_tlc_dedicated": 37500.0,
+      "wafer_qlc_combo": 40000.0,
+      "wafer_tlc_combo": 39000.0,
+      "combo_bit_total": 1115088000.0,
+      "combo_cost_total": 39554.0,
+      "combo_cost_per_bit": 3.547163990644685e-05,
+      "dedicated_bit_total": 1418976000.0,
+      "dedicated_cost_total": 48192.0,
+      "dedicated_cost_per_bit": 3.39625194506461e-05,
+      "combo_bit_total_gb": 139386000.0,
+      "dedicated_bit_total_gb": 177372000.0,
+      "combo_cost_per_gb": 0.0002837731192515748,
+      "dedicated_cost_per_gb": 0.0002717001556051688,
+      "five_year_combo_bit_total": 60297083484.67483,
+      "five_year_combo_bit_total_gb": 7537135435.584353,
+      "five_year_combo_sale_bit_total": 60281727876.13414,
+      "five_year_combo_sale_bit_total_gb": 7535215984.5167675,
+      "five_year_combo_cost_total": 2370054.0,
+      "five_year_combo_cost_per_bit": 3.9306279226629184e-05,
+      "five_year_combo_cost_per_gb": 0.00031445023381303347,
+      "five_year_dedicated_bit_total": 76371559515.2387,
+      "five_year_dedicated_bit_total_gb": 9546444939.404837,
+      "five_year_dedicated_sale_bit_total": 76341796119.3901,
+      "five_year_dedicated_sale_bit_total_gb": 9542724514.923763,
+      "five_year_dedicated_cost_total": 2886092.0,
+      "five_year_dedicated_cost_per_bit": 3.779014096764814e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003023211277411851,
+      "one_year_combo_bit_total": 7998681770.250299,
+      "one_year_combo_bit_total_gb": 999835221.2812874,
+      "one_year_combo_sale_bit_total": 7990639644.480702,
+      "one_year_combo_sale_bit_total_gb": 998829955.5600878,
+      "one_year_combo_cost_total": 474054.0,
+      "one_year_combo_cost_per_bit": 5.926651586054606e-05,
+      "one_year_combo_cost_per_gb": 0.00047413212688436846,
+      "one_year_dedicated_bit_total": 9708983745.58781,
+      "one_year_dedicated_bit_total_gb": 1213622968.1984763,
+      "one_year_dedicated_sale_bit_total": 9694569704.635698,
+      "one_year_dedicated_sale_bit_total_gb": 1211821213.0794623,
+      "one_year_dedicated_cost_total": 577292.0,
+      "one_year_dedicated_cost_per_bit": 5.9459570139083495e-05,
+      "one_year_dedicated_cost_per_gb": 0.00047567656111266796
+    },
+    {
+      "qlc_ratio": 55,
+      "tlc_ratio": 45,
+      "wafer_qlc_dedicated": 46750.00000000001,
+      "wafer_tlc_dedicated": 33750.0,
+      "wafer_qlc_combo": 44000.0,
+      "wafer_tlc_combo": 35100.0,
+      "combo_bit_total": 1163323200.0,
+      "combo_cost_total": 39604.0,
+      "combo_cost_per_bit": 3.404384955101042e-05,
+      "dedicated_bit_total": 1451049600.0,
+      "dedicated_cost_total": 48652.0,
+      "dedicated_cost_per_bit": 3.352883319770737e-05,
+      "combo_bit_total_gb": 145415400.0,
+      "dedicated_bit_total_gb": 181381200.0,
+      "combo_cost_per_gb": 0.00027235079640808334,
+      "dedicated_cost_per_gb": 0.00026823066558165896,
+      "five_year_combo_bit_total": 63130510942.55418,
+      "five_year_combo_bit_total_gb": 7891313867.819272,
+      "five_year_combo_sale_bit_total": 63115155334.01349,
+      "five_year_combo_sale_bit_total_gb": 7889394416.751686,
+      "five_year_combo_cost_total": 2373054.0,
+      "five_year_combo_cost_per_bit": 3.758965299931389e-05,
+      "five_year_combo_cost_per_gb": 0.00030071722399451113,
+      "five_year_dedicated_bit_total": 78097812003.84172,
+      "five_year_dedicated_bit_total_gb": 9762226500.480215,
+      "five_year_dedicated_sale_bit_total": 78068048607.99313,
+      "five_year_dedicated_sale_bit_total_gb": 9758506075.999142,
+      "five_year_dedicated_cost_total": 2913692.0,
+      "five_year_dedicated_cost_per_bit": 3.730824110484263e-05,
+      "five_year_dedicated_cost_per_gb": 0.00029846592883874104,
+      "one_year_combo_bit_total": 8459686752.369782,
+      "one_year_combo_bit_total_gb": 1057460844.0462228,
+      "one_year_combo_sale_bit_total": 8451644626.600185,
+      "one_year_combo_sale_bit_total_gb": 1056455578.3250232,
+      "one_year_combo_cost_total": 474654.0,
+      "one_year_combo_cost_per_bit": 5.6107751255333045e-05,
+      "one_year_combo_cost_per_gb": 0.00044886201004266436,
+      "one_year_dedicated_bit_total": 9928439226.908485,
+      "one_year_dedicated_bit_total_gb": 1241054903.3635607,
+      "one_year_dedicated_sale_bit_total": 9914025185.956373,
+      "one_year_dedicated_sale_bit_total_gb": 1239253148.2445467,
+      "one_year_dedicated_cost_total": 582812.0,
+      "one_year_dedicated_cost_per_bit": 5.870127083222081e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004696101666577665
+    },
+    {
+      "qlc_ratio": 60,
+      "tlc_ratio": 40,
+      "wafer_qlc_dedicated": 51000.0,
+      "wafer_tlc_dedicated": 30000.0,
+      "wafer_qlc_combo": 48000.0,
+      "wafer_tlc_combo": 31200.0,
+      "combo_bit_total": 1211558400.0,
+      "combo_cost_total": 39654.0,
+      "combo_cost_per_bit": 3.2729747076162405e-05,
+      "dedicated_bit_total": 1483123200.0,
+      "dedicated_cost_total": 49112.0,
+      "dedicated_cost_per_bit": 3.3113904495594165e-05,
+      "combo_bit_total_gb": 151444800.0,
+      "dedicated_bit_total_gb": 185390400.0,
+      "combo_cost_per_gb": 0.00026183797660929924,
+      "dedicated_cost_per_gb": 0.0002649112359647533,
+      "five_year_combo_bit_total": 65963938400.43352,
+      "five_year_combo_bit_total_gb": 8245492300.05419,
+      "five_year_combo_sale_bit_total": 65948582791.89282,
+      "five_year_combo_sale_bit_total_gb": 8243572848.986603,
+      "five_year_combo_cost_total": 2376054.0,
+      "five_year_combo_cost_per_bit": 3.6020499345812025e-05,
+      "five_year_combo_cost_per_gb": 0.0002881639947664962,
+      "five_year_dedicated_bit_total": 79824064492.44473,
+      "five_year_dedicated_bit_total_gb": 9978008061.555592,
+      "five_year_dedicated_sale_bit_total": 79794301096.59616,
+      "five_year_dedicated_sale_bit_total_gb": 9974287637.07452,
+      "five_year_dedicated_cost_total": 2941292.0,
+      "five_year_dedicated_cost_per_bit": 3.684718410045871e-05,
+      "five_year_dedicated_cost_per_gb": 0.00029477747280366967,
+      "one_year_combo_bit_total": 8920691734.489265,
+      "one_year_combo_bit_total_gb": 1115086466.8111582,
+      "one_year_combo_sale_bit_total": 8912649608.71967,
+      "one_year_combo_sale_bit_total_gb": 1114081201.0899587,
+      "one_year_combo_cost_total": 475254.0,
+      "one_year_combo_cost_per_bit": 5.327546496899656e-05,
+      "one_year_combo_cost_per_gb": 0.0004262037197519725,
+      "one_year_dedicated_bit_total": 10147894708.22916,
+      "one_year_dedicated_bit_total_gb": 1268486838.528645,
+      "one_year_dedicated_sale_bit_total": 10133480667.277046,
+      "one_year_dedicated_sale_bit_total_gb": 1266685083.4096308,
+      "one_year_dedicated_cost_total": 588332.0,
+      "one_year_dedicated_cost_per_bit": 5.797576905512314e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004638061524409851
+    },
+    {
+      "qlc_ratio": 65,
+      "tlc_ratio": 35,
+      "wafer_qlc_dedicated": 55250.0,
+      "wafer_tlc_dedicated": 26250.0,
+      "wafer_qlc_combo": 52000.0,
+      "wafer_tlc_combo": 27300.0,
+      "combo_bit_total": 1259793600.0,
+      "combo_cost_total": 39704.0,
+      "combo_cost_per_bit": 3.151627377691076e-05,
+      "dedicated_bit_total": 1515196799.9999998,
+      "dedicated_cost_total": 49572.0,
+      "dedicated_cost_per_bit": 3.2716542167987686e-05,
+      "combo_bit_total_gb": 157474200.0,
+      "dedicated_bit_total_gb": 189399599.99999997,
+      "combo_cost_per_gb": 0.00025213019021528605,
+      "dedicated_cost_per_gb": 0.0002617323373439015,
+      "five_year_combo_bit_total": 68797365858.31287,
+      "five_year_combo_bit_total_gb": 8599670732.289108,
+      "five_year_combo_sale_bit_total": 68782010249.77217,
+      "five_year_combo_sale_bit_total_gb": 8597751281.221521,
+      "five_year_combo_cost_total": 2379054.0,
+      "five_year_combo_cost_per_bit": 3.4580597241173825e-05,
+      "five_year_combo_cost_per_gb": 0.0002766447779293906,
+      "five_year_dedicated_bit_total": 81550316981.04776,
+      "five_year_dedicated_bit_total_gb": 10193789622.63097,
+      "five_year_dedicated_sale_bit_total": 81520553585.19917,
+      "five_year_dedicated_sale_bit_total_gb": 10190069198.149897,
+      "five_year_dedicated_cost_total": 2968892.0,
+      "five_year_dedicated_cost_per_bit": 3.640564635315849e-05,
+      "five_year_dedicated_cost_per_gb": 0.0002912451708252679,
+      "one_year_combo_bit_total": 9381696716.60875,
+      "one_year_combo_bit_total_gb": 1172712089.5760937,
+      "one_year_combo_sale_bit_total": 9373654590.839151,
+      "one_year_combo_sale_bit_total_gb": 1171706823.854894,
+      "one_year_combo_cost_total": 475854.0,
+      "one_year_combo_cost_per_bit": 5.072152877821971e-05,
+      "one_year_combo_cost_per_gb": 0.00040577223022575766,
+      "one_year_dedicated_bit_total": 10367350189.549835,
+      "one_year_dedicated_bit_total_gb": 1295918773.6937294,
+      "one_year_dedicated_sale_bit_total": 10352936148.597721,
+      "one_year_dedicated_sale_bit_total_gb": 1294117018.5747151,
+      "one_year_dedicated_cost_total": 593852.0,
+      "one_year_dedicated_cost_per_bit": 5.728098203903595e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004582478563122876
+    },
+    {
+      "qlc_ratio": 70,
+      "tlc_ratio": 30,
+      "wafer_qlc_dedicated": 59499.99999999999,
+      "wafer_tlc_dedicated": 22500.0,
+      "wafer_qlc_combo": 56000.0,
+      "wafer_tlc_combo": 23400.0,
+      "combo_bit_total": 1308028800.0,
+      "combo_cost_total": 39754.0,
+      "combo_cost_per_bit": 3.039229717266164e-05,
+      "dedicated_bit_total": 1547270399.9999998,
+      "dedicated_cost_total": 50031.99999999999,
+      "dedicated_cost_per_bit": 3.233565380685884e-05,
+      "combo_bit_total_gb": 163503600.0,
+      "dedicated_bit_total_gb": 193408799.99999997,
+      "combo_cost_per_gb": 0.00024313837738129313,
+      "dedicated_cost_per_gb": 0.0002586852304548707,
+      "five_year_combo_bit_total": 71630793316.1922,
+      "five_year_combo_bit_total_gb": 8953849164.524025,
+      "five_year_combo_sale_bit_total": 71615437707.6515,
+      "five_year_combo_sale_bit_total_gb": 8951929713.456438,
+      "five_year_combo_cost_total": 2382054.0,
+      "five_year_combo_cost_per_bit": 3.3254608663695126e-05,
+      "five_year_combo_cost_per_gb": 0.000266036869309561,
+      "five_year_dedicated_bit_total": 83276569469.65076,
+      "five_year_dedicated_bit_total_gb": 10409571183.706345,
+      "five_year_dedicated_sale_bit_total": 83246806073.80219,
+      "five_year_dedicated_sale_bit_total_gb": 10405850759.225273,
+      "five_year_dedicated_cost_total": 2996491.9999999995,
+      "five_year_dedicated_cost_per_bit": 3.5982414010126084e-05,
+      "five_year_dedicated_cost_per_gb": 0.00028785931208100867,
+      "one_year_combo_bit_total": 9842701698.728231,
+      "one_year_combo_bit_total_gb": 1230337712.341029,
+      "one_year_combo_sale_bit_total": 9834659572.958633,
+      "one_year_combo_sale_bit_total_gb": 1229332446.6198292,
+      "one_year_combo_cost_total": 476454.0,
+      "one_year_combo_cost_per_bit": 4.8406831232278664e-05,
+      "one_year_combo_cost_per_gb": 0.0003872546498582293,
+      "one_year_dedicated_bit_total": 10586805670.870508,
+      "one_year_dedicated_bit_total_gb": 1323350708.8588135,
+      "one_year_dedicated_sale_bit_total": 10572391629.918396,
+      "one_year_dedicated_sale_bit_total_gb": 1321548953.7397995,
+      "one_year_dedicated_cost_total": 599371.9999999999,
+      "one_year_dedicated_cost_per_bit": 5.661499971130726e-05,
+      "one_year_dedicated_cost_per_gb": 0.00045291999769045806
+    },
+    {
+      "qlc_ratio": 75,
+      "tlc_ratio": 25,
+      "wafer_qlc_dedicated": 63750.0,
+      "wafer_tlc_dedicated": 18750.0,
+      "wafer_qlc_combo": 60000.0,
+      "wafer_tlc_combo": 19500.0,
+      "combo_bit_total": 1356264000.0,
+      "combo_cost_total": 39804.0,
+      "combo_cost_per_bit": 2.9348268478703263e-05,
+      "dedicated_bit_total": 1579343999.9999998,
+      "dedicated_cost_total": 50492.0,
+      "dedicated_cost_per_bit": 3.1970235743447916e-05,
+      "combo_bit_total_gb": 169533000.0,
+      "dedicated_bit_total_gb": 197417999.99999997,
+      "combo_cost_per_gb": 0.0002347861478296261,
+      "dedicated_cost_per_gb": 0.00025576188594758333,
+      "five_year_combo_bit_total": 74464220774.07155,
+      "five_year_combo_bit_total_gb": 9308027596.758944,
+      "five_year_combo_sale_bit_total": 74448865165.53085,
+      "five_year_combo_sale_bit_total_gb": 9306108145.691357,
+      "five_year_combo_cost_total": 2385054.0,
+      "five_year_combo_cost_per_bit": 3.2029530091188116e-05,
+      "five_year_combo_cost_per_gb": 0.0002562362407295049,
+      "five_year_dedicated_bit_total": 85002821958.25378,
+      "five_year_dedicated_bit_total_gb": 10625352744.781723,
+      "five_year_dedicated_sale_bit_total": 84973058562.4052,
+      "five_year_dedicated_sale_bit_total_gb": 10621632320.30065,
+      "five_year_dedicated_cost_total": 3024092.0,
+      "five_year_dedicated_cost_per_bit": 3.5576371823104634e-05,
+      "five_year_dedicated_cost_per_gb": 0.00028461097458483707,
+      "one_year_combo_bit_total": 10303706680.847715,
+      "one_year_combo_bit_total_gb": 1287963335.1059644,
+      "one_year_combo_sale_bit_total": 10295664555.07812,
+      "one_year_combo_sale_bit_total_gb": 1286958069.384765,
+      "one_year_combo_cost_total": 477054.0,
+      "one_year_combo_cost_per_bit": 4.629926052599465e-05,
+      "one_year_combo_cost_per_gb": 0.0003703940842079572,
+      "one_year_dedicated_bit_total": 10806261152.191181,
+      "one_year_dedicated_bit_total_gb": 1350782644.0238976,
+      "one_year_dedicated_sale_bit_total": 10791847111.239069,
+      "one_year_dedicated_sale_bit_total_gb": 1348980888.9048836,
+      "one_year_dedicated_cost_total": 604892.0,
+      "one_year_dedicated_cost_per_bit": 5.597606715967125e-05,
+      "one_year_dedicated_cost_per_gb": 0.00044780853727737
+    },
+    {
+      "qlc_ratio": 80,
+      "tlc_ratio": 20,
+      "wafer_qlc_dedicated": 68000.0,
+      "wafer_tlc_dedicated": 15000.0,
+      "wafer_qlc_combo": 64000.0,
+      "wafer_tlc_combo": 15600.0,
+      "combo_bit_total": 1404499200.0,
+      "combo_cost_total": 39854.0,
+      "combo_cost_per_bit": 2.8375950659138858e-05,
+      "dedicated_bit_total": 1611417599.9999998,
+      "dedicated_cost_total": 50952.0,
+      "dedicated_cost_per_bit": 3.1619364216947864e-05,
+      "combo_bit_total_gb": 175562400.0,
+      "dedicated_bit_total_gb": 201427199.99999997,
+      "combo_cost_per_gb": 0.00022700760527311086,
+      "dedicated_cost_per_gb": 0.0002529549137355829,
+      "five_year_combo_bit_total": 77297648231.9509,
+      "five_year_combo_bit_total_gb": 9662206028.993862,
+      "five_year_combo_sale_bit_total": 77282292623.41019,
+      "five_year_combo_sale_bit_total_gb": 9660286577.926273,
+      "five_year_combo_cost_total": 2388054.0,
+      "five_year_combo_cost_per_bit": 3.089426463317548e-05,
+      "five_year_combo_cost_per_gb": 0.00024715411706540384,
+      "five_year_dedicated_bit_total": 86729074446.85681,
+      "five_year_dedicated_bit_total_gb": 10841134305.857101,
+      "five_year_dedicated_sale_bit_total": 86699311051.00821,
+      "five_year_dedicated_sale_bit_total_gb": 10837413881.376026,
+      "five_year_dedicated_cost_total": 3051692.0,
+      "five_year_dedicated_cost_per_bit": 3.5186493335287726e-05,
+      "five_year_dedicated_cost_per_gb": 0.0002814919466823018,
+      "one_year_combo_bit_total": 10764711662.9672,
+      "one_year_combo_bit_total_gb": 1345588957.8709,
+      "one_year_combo_sale_bit_total": 10756669537.197601,
+      "one_year_combo_sale_bit_total_gb": 1344583692.1497002,
+      "one_year_combo_cost_total": 477654.0,
+      "one_year_combo_cost_per_bit": 4.4372205680457476e-05,
+      "one_year_combo_cost_per_gb": 0.0003549776454436598,
+      "one_year_dedicated_bit_total": 11025716633.511856,
+      "one_year_dedicated_bit_total_gb": 1378214579.188982,
+      "one_year_dedicated_sale_bit_total": 11011302592.559744,
+      "one_year_dedicated_sale_bit_total_gb": 1376412824.069968,
+      "one_year_dedicated_cost_total": 610412.0,
+      "one_year_dedicated_cost_per_bit": 5.5362569190713425e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004429005535257074
+    },
+    {
+      "qlc_ratio": 85,
+      "tlc_ratio": 15,
+      "wafer_qlc_dedicated": 72250.0,
+      "wafer_tlc_dedicated": 11250.0,
+      "wafer_qlc_combo": 68000.0,
+      "wafer_tlc_combo": 11700.0,
+      "combo_bit_total": 1452734400.0,
+      "combo_cost_total": 39904.0,
+      "combo_cost_per_bit": 2.746820065663758e-05,
+      "dedicated_bit_total": 1643491199.9999998,
+      "dedicated_cost_total": 51412.0,
+      "dedicated_cost_per_bit": 3.128218757727453e-05,
+      "combo_bit_total_gb": 181591800.0,
+      "dedicated_bit_total_gb": 205436399.99999997,
+      "combo_cost_per_gb": 0.00021974560525310063,
+      "dedicated_cost_per_gb": 0.00025025750061819624,
+      "five_year_combo_bit_total": 80131075689.83023,
+      "five_year_combo_bit_total_gb": 10016384461.228779,
+      "five_year_combo_sale_bit_total": 80115720081.28954,
+      "five_year_combo_sale_bit_total_gb": 10014465010.161192,
+      "five_year_combo_cost_total": 2391054.0,
+      "five_year_combo_cost_per_bit": 2.9839284939281785e-05,
+      "five_year_combo_cost_per_gb": 0.00023871427951425428,
+      "five_year_dedicated_bit_total": 88455326935.45982,
+      "five_year_dedicated_bit_total_gb": 11056915866.932478,
+      "five_year_dedicated_sale_bit_total": 88425563539.61124,
+      "five_year_dedicated_sale_bit_total_gb": 11053195442.451405,
+      "five_year_dedicated_cost_total": 3079292.0,
+      "five_year_dedicated_cost_per_bit": 3.481183221725879e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027849465773807034,
+      "one_year_combo_bit_total": 11225716645.086681,
+      "one_year_combo_bit_total_gb": 1403214580.6358352,
+      "one_year_combo_sale_bit_total": 11217674519.317083,
+      "one_year_combo_sale_bit_total_gb": 1402209314.9146354,
+      "one_year_combo_cost_total": 478254.0,
+      "one_year_combo_cost_per_bit": 4.2603427034595976e-05,
+      "one_year_combo_cost_per_gb": 0.0003408274162767678,
+      "one_year_dedicated_bit_total": 11245172114.832531,
+      "one_year_dedicated_bit_total_gb": 1405646514.3540664,
+      "one_year_dedicated_sale_bit_total": 11230758073.880419,
+      "one_year_dedicated_sale_bit_total_gb": 1403844759.2350523,
+      "one_year_dedicated_cost_total": 615932.0,
+      "one_year_dedicated_cost_per_bit": 5.4773016696434334e-05,
+      "one_year_dedicated_cost_per_gb": 0.00043818413357147467
+    },
+    {
+      "qlc_ratio": 90,
+      "tlc_ratio": 10,
+      "wafer_qlc_dedicated": 76500.0,
+      "wafer_tlc_dedicated": 7500.0,
+      "wafer_qlc_combo": 72000.0,
+      "wafer_tlc_combo": 7800.0,
+      "combo_bit_total": 1500969600.0,
+      "combo_cost_total": 39954.0,
+      "combo_cost_per_bit": 2.6618793611809327e-05,
+      "dedicated_bit_total": 1675564799.9999998,
+      "dedicated_cost_total": 51872.0,
+      "dedicated_cost_per_bit": 3.095791938336256e-05,
+      "combo_bit_total_gb": 187621200.0,
+      "dedicated_bit_total_gb": 209445599.99999997,
+      "combo_cost_per_gb": 0.00021295034889447462,
+      "dedicated_cost_per_gb": 0.0002476633550669005,
+      "five_year_combo_bit_total": 82964503147.70956,
+      "five_year_combo_bit_total_gb": 10370562893.463696,
+      "five_year_combo_sale_bit_total": 82949147539.16887,
+      "five_year_combo_sale_bit_total_gb": 10368643442.396109,
+      "five_year_combo_cost_total": 2394054.0,
+      "five_year_combo_cost_per_bit": 2.8856365182319466e-05,
+      "five_year_combo_cost_per_gb": 0.00023085092145855573,
+      "five_year_dedicated_bit_total": 90181579424.06285,
+      "five_year_dedicated_bit_total_gb": 11272697428.007856,
+      "five_year_dedicated_sale_bit_total": 90151816028.21426,
+      "five_year_dedicated_sale_bit_total_gb": 11268977003.526783,
+      "five_year_dedicated_cost_total": 3106892.0,
+      "five_year_dedicated_cost_per_bit": 3.445151459801333e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027561211678410664,
+      "one_year_combo_bit_total": 11686721627.206163,
+      "one_year_combo_bit_total_gb": 1460840203.4007704,
+      "one_year_combo_sale_bit_total": 11678679501.436567,
+      "one_year_combo_sale_bit_total_gb": 1459834937.679571,
+      "one_year_combo_cost_total": 478854.0,
+      "one_year_combo_cost_per_bit": 4.097419407040974e-05,
+      "one_year_combo_cost_per_gb": 0.0003277935525632779,
+      "one_year_dedicated_bit_total": 11464627596.153206,
+      "one_year_dedicated_bit_total_gb": 1433078449.5191507,
+      "one_year_dedicated_sale_bit_total": 11450213555.201092,
+      "one_year_dedicated_sale_bit_total_gb": 1431276694.4001365,
+      "one_year_dedicated_cost_total": 621452.0,
+      "one_year_dedicated_cost_per_bit": 5.420603458663755e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004336482766931004
+    },
+    {
+      "qlc_ratio": 95,
+      "tlc_ratio": 5,
+      "wafer_qlc_dedicated": 80750.0,
+      "wafer_tlc_dedicated": 3750.0,
+      "wafer_qlc_combo": 76000.0,
+      "wafer_tlc_combo": 3900.0,
+      "combo_bit_total": 1549204800.0,
+      "combo_cost_total": 40004.0,
+      "combo_cost_per_bit": 2.5822279920640576e-05,
+      "dedicated_bit_total": 1707638399.9999998,
+      "dedicated_cost_total": 52332.0,
+      "dedicated_cost_per_bit": 3.064583227924601e-05,
+      "combo_bit_total_gb": 193650600.0,
+      "dedicated_bit_total_gb": 213454799.99999997,
+      "combo_cost_per_gb": 0.0002065782393651246,
+      "dedicated_cost_per_gb": 0.0002451666582339681,
+      "five_year_combo_bit_total": 85797930605.58891,
+      "five_year_combo_bit_total_gb": 10724741325.698614,
+      "five_year_combo_sale_bit_total": 85782574997.04822,
+      "five_year_combo_sale_bit_total_gb": 10722821874.631027,
+      "five_year_combo_cost_total": 2397054.0,
+      "five_year_combo_cost_per_bit": 2.7938366148004215e-05,
+      "five_year_combo_cost_per_gb": 0.00022350692918403372,
+      "five_year_dedicated_bit_total": 91907831912.66586,
+      "five_year_dedicated_bit_total_gb": 11488478989.083233,
+      "five_year_dedicated_sale_bit_total": 91878068516.81728,
+      "five_year_dedicated_sale_bit_total_gb": 11484758564.60216,
+      "five_year_dedicated_cost_total": 3134492.0,
+      "five_year_dedicated_cost_per_bit": 3.4104732260233356e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027283785808186685,
+      "one_year_combo_bit_total": 12147726609.325647,
+      "one_year_combo_bit_total_gb": 1518465826.165706,
+      "one_year_combo_sale_bit_total": 12139684483.55605,
+      "one_year_combo_sale_bit_total_gb": 1517460560.4445062,
+      "one_year_combo_cost_total": 479454.0,
+      "one_year_combo_cost_per_bit": 3.94686195548663e-05,
+      "one_year_combo_cost_per_gb": 0.0003157489564389304,
+      "one_year_dedicated_bit_total": 11684083077.473879,
+      "one_year_dedicated_bit_total_gb": 1460510384.6842349,
+      "one_year_dedicated_sale_bit_total": 11669669036.521767,
+      "one_year_dedicated_sale_bit_total_gb": 1458708629.5652208,
+      "one_year_dedicated_cost_total": 626972.0,
+      "one_year_dedicated_cost_per_bit": 5.3660351081272227e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004292828086501778
+    },
+    {
+      "qlc_ratio": 100,
+      "tlc_ratio": 0,
+      "wafer_qlc_dedicated": 85000.0,
+      "wafer_tlc_dedicated": 0.0,
+      "wafer_qlc_combo": 80000.0,
+      "wafer_tlc_combo": 0.0,
+      "combo_bit_total": 1597440000.0,
+      "combo_cost_total": 40054.0,
+      "combo_cost_per_bit": 2.5073868189102565e-05,
+      "dedicated_bit_total": 1739711999.9999998,
+      "dedicated_cost_total": 52792.0,
+      "dedicated_cost_per_bit": 3.0345252547548105e-05,
+      "combo_bit_total_gb": 199680000.0,
+      "dedicated_bit_total_gb": 217463999.99999997,
+      "combo_cost_per_gb": 0.00020059094551282052,
+      "dedicated_cost_per_gb": 0.00024276202038038484,
+      "five_year_combo_bit_total": 88631358063.46826,
+      "five_year_combo_bit_total_gb": 11078919757.933533,
+      "five_year_combo_sale_bit_total": 88622805197.6054,
+      "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+      "five_year_combo_cost_total": 2400054.0,
+      "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+      "five_year_combo_cost_per_gb": 0.00021663249237646468,
+      "five_year_dedicated_bit_total": 93634084401.26889,
+      "five_year_dedicated_bit_total_gb": 11704260550.158611,
+      "five_year_dedicated_sale_bit_total": 93616734175.25288,
+      "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+      "five_year_dedicated_cost_total": 3162092.0,
+      "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+      "one_year_combo_bit_total": 12608731591.445131,
+      "one_year_combo_bit_total_gb": 1576091448.9306414,
+      "one_year_combo_sale_bit_total": 12602427225.649408,
+      "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+      "one_year_combo_cost_total": 480054.0,
+      "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+      "one_year_combo_cost_per_gb": 0.00030458511803087995,
+      "one_year_dedicated_bit_total": 11903538558.794554,
+      "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+      "one_year_dedicated_sale_bit_total": 11895136060.988346,
+      "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+      "one_year_dedicated_cost_total": 632492.0,
+      "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+    }
+  ],
+  "crossover": {
+    "exists": true,
+    "qlc_ratio": 60,
+    "tlc_ratio": 40,
+    "combo_cost_per_bit": 3.2729747076162405e-05,
+    "dedicated_cost_per_bit": 3.3113904495594165e-05
+  },
+  "dev_cost": {
+    "combo": 54.0,
+    "dedicated": 92.0
+  },
+  "full_buildout": {
+    "combo": 40054.0,
+    "dedicated": 96292.0,
+    "combo_representative_capa_field": "combo_qlc_max_capa",
+    "combo_assumption": "combo's full max-capa buildout uses combo_qlc_max_capa as the representative capacity (not combo_tlc_max_capa, and not the larger of the two): combo is one physical line built around the QLC die design (combo_capex_per_wafer/combo_gross_die are already shared across both recipes), so its buildout size is set by the QLC recipe's max throughput -- the TLC-recipe max capa is a derived operating mode of that same physical investment, not a separate buildout to size for."
+  },
+  "yield_ramp_curves": {
+    "qlc_dedicated": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 11.42194593314526
+      },
+      {
+        "month": 2,
+        "yield_pct": 21.252905904099133
+      },
+      {
+        "month": 3,
+        "yield_pct": 29.714491567014583
+      },
+      {
+        "month": 4,
+        "yield_pct": 36.99744584028982
+      },
+      {
+        "month": 5,
+        "yield_pct": 43.26594267523679
+      },
+      {
+        "month": 6,
+        "yield_pct": 48.66128790127086
+      },
+      {
+        "month": 7,
+        "yield_pct": 53.30510457288526
+      },
+      {
+        "month": 8,
+        "yield_pct": 57.30207462319942
+      },
+      {
+        "month": 9,
+        "yield_pct": 60.74229862703688
+      },
+      {
+        "month": 10,
+        "yield_pct": 63.70332686782876
+      },
+      {
+        "month": 11,
+        "yield_pct": 66.25190749309816
+      },
+      {
+        "month": 12,
+        "yield_pct": 68.44549116582989
+      },
+      {
+        "month": 13,
+        "yield_pct": 70.33352612990588
+      },
+      {
+        "month": 14,
+        "yield_pct": 71.95857288325548
+      },
+      {
+        "month": 15,
+        "yield_pct": 73.35726358592713
+      },
+      {
+        "month": 16,
+        "yield_pct": 74.56112783026818
+      },
+      {
+        "month": 17,
+        "yield_pct": 75.59730338790544
+      },
+      {
+        "month": 18,
+        "yield_pct": 76.48914795534051
+      },
+      {
+        "month": 19,
+        "yield_pct": 77.25676568826324
+      },
+      {
+        "month": 20,
+        "yield_pct": 77.91746039383514
+      },
+      {
+        "month": 21,
+        "yield_pct": 78.4861255969027
+      },
+      {
+        "month": 22,
+        "yield_pct": 78.97558027309832
+      },
+      {
+        "month": 23,
+        "yield_pct": 79.39685781699842
+      },
+      {
+        "month": 24,
+        "yield_pct": 79.75945475932201
+      },
+      {
+        "month": 25,
+        "yield_pct": 80.07154483980725
+      },
+      {
+        "month": 26,
+        "yield_pct": 80.34016326144405
+      },
+      {
+        "month": 27,
+        "yield_pct": 80.57136527956153
+      },
+      {
+        "month": 28,
+        "yield_pct": 80.77036270072082
+      },
+      {
+        "month": 29,
+        "yield_pct": 80.94164136840064
+      },
+      {
+        "month": 30,
+        "yield_pct": 81.08906228386414
+      },
+      {
+        "month": 31,
+        "yield_pct": 81.21594864169542
+      },
+      {
+        "month": 32,
+        "yield_pct": 81.32516074198035
+      },
+      {
+        "month": 33,
+        "yield_pct": 81.41916046781772
+      },
+      {
+        "month": 34,
+        "yield_pct": 81.50006678162771
+      },
+      {
+        "month": 35,
+        "yield_pct": 81.56970349126712
+      },
+      {
+        "month": 36,
+        "yield_pct": 81.62964036270576
+      }
+    ],
+    "qlc_combo": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 14.501539753761456
+      },
+      {
+        "month": 2,
+        "yield_pct": 26.374396317148857
+      },
+      {
+        "month": 3,
+        "yield_pct": 36.09506911247789
+      },
+      {
+        "month": 4,
+        "yield_pct": 44.05368287062228
+      },
+      {
+        "month": 5,
+        "yield_pct": 50.56964470628461
+      },
+      {
+        "month": 6,
+        "yield_pct": 55.904463047023846
+      },
+      {
+        "month": 7,
+        "yield_pct": 60.27224288467149
+      },
+      {
+        "month": 8,
+        "yield_pct": 63.84827856042757
+      },
+      {
+        "month": 9,
+        "yield_pct": 66.77608894227308
+      },
+      {
+        "month": 10,
+        "yield_pct": 69.173177341071
+      },
+      {
+        "month": 11,
+        "yield_pct": 71.13574733101329
+      },
+      {
+        "month": 12,
+        "yield_pct": 72.742563736847
+      },
+      {
+        "month": 13,
+        "yield_pct": 74.0581137428533
+      },
+      {
+        "month": 14,
+        "yield_pct": 75.13519498998257
+      },
+      {
+        "month": 15,
+        "yield_pct": 76.0170345305709
+      },
+      {
+        "month": 16,
+        "yield_pct": 76.73902368173071
+      },
+      {
+        "month": 17,
+        "yield_pct": 77.33013840317392
+      },
+      {
+        "month": 18,
+        "yield_pct": 77.81410220421661
+      },
+      {
+        "month": 19,
+        "yield_pct": 78.21033825150676
+      },
+      {
+        "month": 20,
+        "yield_pct": 78.53474888890126
+      },
+      {
+        "month": 21,
+        "yield_pct": 78.80035385436179
+      },
+      {
+        "month": 22,
+        "yield_pct": 79.01781280775452
+      },
+      {
+        "month": 23,
+        "yield_pct": 79.19585314042932
+      },
+      {
+        "month": 24,
+        "yield_pct": 79.3416202360784
+      },
+      {
+        "month": 25,
+        "yield_pct": 79.46096424007317
+      },
+      {
+        "month": 26,
+        "yield_pct": 79.55867484633914
+      },
+      {
+        "month": 27,
+        "yield_pct": 79.638673524591
+      },
+      {
+        "month": 28,
+        "yield_pct": 79.70417090268137
+      },
+      {
+        "month": 29,
+        "yield_pct": 79.75779562036993
+      },
+      {
+        "month": 30,
+        "yield_pct": 79.80169982586669
+      },
+      {
+        "month": 31,
+        "yield_pct": 79.83764554909635
+      },
+      {
+        "month": 32,
+        "yield_pct": 79.86707541814609
+      },
+      {
+        "month": 33,
+        "yield_pct": 79.89117055699617
+      },
+      {
+        "month": 34,
+        "yield_pct": 79.91089798817241
+      },
+      {
+        "month": 35,
+        "yield_pct": 79.92704944275565
+      },
+      {
+        "month": 36,
+        "yield_pct": 79.94027313532986
+      }
+    ],
+    "tlc_dedicated": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 12.257698074594913
+      },
+      {
+        "month": 2,
+        "yield_pct": 22.807996580008826
+      },
+      {
+        "month": 3,
+        "yield_pct": 31.888722657283946
+      },
+      {
+        "month": 4,
+        "yield_pct": 39.70457602372567
+      },
+      {
+        "month": 5,
+        "yield_pct": 46.431743358790705
+      },
+      {
+        "month": 6,
+        "yield_pct": 52.22186994282727
+      },
+      {
+        "month": 7,
+        "yield_pct": 57.20547807821834
+      },
+      {
+        "month": 8,
+        "yield_pct": 61.494909351726214
+      },
+      {
+        "month": 9,
+        "yield_pct": 65.18685706316154
+      },
+      {
+        "month": 10,
+        "yield_pct": 68.36454590693818
+      },
+      {
+        "month": 11,
+        "yield_pct": 71.09960804137364
+      },
+      {
+        "month": 12,
+        "yield_pct": 73.45369783650038
+      },
+      {
+        "month": 13,
+        "yield_pct": 75.4798817003868
+      },
+      {
+        "month": 14,
+        "yield_pct": 77.2238343137376
+      },
+      {
+        "month": 15,
+        "yield_pct": 78.72486823855593
+      },
+      {
+        "month": 16,
+        "yield_pct": 80.01682011053171
+      },
+      {
+        "month": 17,
+        "yield_pct": 81.12881339189852
+      },
+      {
+        "month": 18,
+        "yield_pct": 82.08591487890202
+      },
+      {
+        "month": 19,
+        "yield_pct": 82.90969976301422
+      },
+      {
+        "month": 20,
+        "yield_pct": 83.61873798362798
+      },
+      {
+        "month": 21,
+        "yield_pct": 84.22901283570047
+      },
+      {
+        "month": 22,
+        "yield_pct": 84.75428126869087
+      },
+      {
+        "month": 23,
+        "yield_pct": 85.20638399873002
+      },
+      {
+        "month": 24,
+        "yield_pct": 85.59551242463826
+      },
+      {
+        "month": 25,
+        "yield_pct": 85.9304383646712
+      },
+      {
+        "month": 26,
+        "yield_pct": 86.21871179276923
+      },
+      {
+        "month": 27,
+        "yield_pct": 86.46683103172458
+      },
+      {
+        "month": 28,
+        "yield_pct": 86.68038923979796
+      },
+      {
+        "month": 29,
+        "yield_pct": 86.86420049291777
+      },
+      {
+        "month": 30,
+        "yield_pct": 87.02240830463468
+      },
+      {
+        "month": 31,
+        "yield_pct": 87.15857903011216
+      },
+      {
+        "month": 32,
+        "yield_pct": 87.27578225968624
+      },
+      {
+        "month": 33,
+        "yield_pct": 87.37666001424341
+      },
+      {
+        "month": 34,
+        "yield_pct": 87.46348630223463
+      },
+      {
+        "month": 35,
+        "yield_pct": 87.53821838087205
+      },
+      {
+        "month": 36,
+        "yield_pct": 87.60254087705009
+      }
+    ],
+    "tlc_combo": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 7.422681393195157
+      },
+      {
+        "month": 2,
+        "yield_pct": 14.13900125991742
+      },
+      {
+        "month": 3,
+        "yield_pct": 20.216178786826006
+      },
+      {
+        "month": 4,
+        "yield_pct": 25.715036409220133
+      },
+      {
+        "month": 5,
+        "yield_pct": 30.690608542414594
+      },
+      {
+        "month": 6,
+        "yield_pct": 35.19269238466594
+      },
+      {
+        "month": 7,
+        "yield_pct": 39.266346304270066
+      },
+      {
+        "month": 8,
+        "yield_pct": 42.95234079885672
+      },
+      {
+        "month": 9,
+        "yield_pct": 46.28756654023327
+      },
+      {
+        "month": 10,
+        "yield_pct": 49.3054035886275
+      },
+      {
+        "month": 11,
+        "yield_pct": 52.0360554715498
+      },
+      {
+        "month": 12,
+        "yield_pct": 54.50685147084825
+      },
+      {
+        "month": 13,
+        "yield_pct": 56.74252014334702
+      },
+      {
+        "month": 14,
+        "yield_pct": 58.7654368125547
+      },
+      {
+        "month": 15,
+        "yield_pct": 60.59584750842247
+      },
+      {
+        "month": 16,
+        "yield_pct": 62.25207159641688
+      },
+      {
+        "month": 17,
+        "yield_pct": 63.75068512388671
+      },
+      {
+        "month": 18,
+        "yield_pct": 65.10668671871626
+      },
+      {
+        "month": 19,
+        "yield_pct": 66.33364770063447
+      },
+      {
+        "month": 20,
+        "yield_pct": 67.44384790754421
+      },
+      {
+        "month": 21,
+        "yield_pct": 68.44839859626741
+      },
+      {
+        "month": 22,
+        "yield_pct": 69.35735364773797
+      },
+      {
+        "month": 23,
+        "yield_pct": 70.17981018962132
+      },
+      {
+        "month": 24,
+        "yield_pct": 70.92399964342583
+      },
+      {
+        "month": 25,
+        "yield_pct": 71.59737010733589
+      },
+      {
+        "month": 26,
+        "yield_pct": 72.20666089928196
+      },
+      {
+        "month": 27,
+        "yield_pct": 72.75797000629952
+      },
+      {
+        "month": 28,
+        "yield_pct": 73.25681511523301
+      },
+      {
+        "month": 29,
+        "yield_pct": 73.70818883560024
+      },
+      {
+        "month": 30,
+        "yield_pct": 74.11660866730662
+      },
+      {
+        "month": 31,
+        "yield_pct": 74.48616221330249
+      },
+      {
+        "month": 32,
+        "yield_pct": 74.82054808968745
+      },
+      {
+        "month": 33,
+        "yield_pct": 75.12311294270329
+      },
+      {
+        "month": 34,
+        "yield_pct": 75.39688494309456
+      },
+      {
+        "month": 35,
+        "yield_pct": 75.64460409305916
+      },
+      {
+        "month": 36,
+        "yield_pct": 75.8687496491112
+      }
+    ]
+  },
+  "t95_months": {
+    "qlc": 19.97154849035994,
+    "tlc": 19.97154849035994,
+    "combo_qlc": 14.978661367769954,
+    "combo_tlc": 29.957322735539908
+  },
+  "er_wafer_rate_assumption": "er_wafer_combo / er_wafer_dedicated are each a single monthly ER-wafer consumption RATE for their scenario, applied independently (in full, not split 50/50) to BOTH of that scenario's two lines/recipes -- combo's QLC recipe and TLC recipe each separately consume up to er_wafer_combo wafers/month during their OWN ER period (t <= that recipe's own t95); dedicated's QLC line and TLC line each separately consume up to er_wafer_dedicated wafers/month during their OWN ER period. This mirrors combo_headcount/dedicated_headcount, which are also single scenario-level values used as-is on both lines/recipes.",
+  "cost_mode": "model",
+  "direct_cost_per_gb": {
+    "combo": 0.0,
+    "dedicated": 0.0
+  },
+  "best_combo_bit_production": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "best_combo_cost_per_bit": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "best_dedicated_bit_production": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "best_dedicated_cost_per_bit": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "currency_unit": "억원",
+  "bit_unit": "Gb",
+  "is_sample": true
+};
+</script>
+<script>
+(function () {
+  var data = INITIAL_PAYLOAD;
+  var REQUIRED_KEYS = ["qlc_capex_per_wafer", "qlc_density", "qlc_gross_die", "qlc_mature_yield", "qlc_yield_ramp_coef", "qlc_max_capa", "tlc_capex_per_wafer", "tlc_density", "tlc_gross_die", "tlc_mature_yield", "tlc_yield_ramp_coef", "tlc_max_capa", "combo_capex_per_wafer", "combo_gross_die", "combo_qlc_density", "combo_qlc_mature_yield", "combo_qlc_yield_ramp_coef", "combo_qlc_max_capa", "combo_tlc_density", "combo_tlc_mature_yield", "combo_tlc_yield_ramp_coef", "combo_tlc_max_capa", "er_wafer_combo", "er_wafer_dedicated", "combo_headcount", "dedicated_headcount", "combo_mask_count", "dedicated_mask_count", "coef_cost_per_headcount", "coef_cost_per_mask"];
+  var PARAM_LABELS = {"qlc_capex_per_wafer": "투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화", "qlc_density": "Density (Gb/Wafer)", "qlc_gross_die": "Grossdie/Wafer", "qlc_mature_yield": "성숙 수율 (%, 완전히 램프업된 이후)", "qlc_yield_ramp_coef": "수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)", "qlc_max_capa": "Max Wafer capa (QLC 전용 라인 100% 가동시, wafer/월)", "tlc_capex_per_wafer": "투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화", "tlc_density": "Density (Gb/Wafer)", "tlc_gross_die": "Grossdie/Wafer", "tlc_mature_yield": "성숙 수율 (%, 완전히 램프업된 이후)", "tlc_yield_ramp_coef": "수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)", "tlc_max_capa": "Max Wafer capa (TLC 전용 라인 100% 가동시, wafer/월)", "combo_capex_per_wafer": "투자비 (capex, currency_unit/1만 Wafer) — GB당 원가 직접 입력 모드에서는 비활성화", "combo_gross_die": "Grossdie/Wafer", "combo_qlc_density": "Density (Gb/Wafer)", "combo_qlc_mature_yield": "성숙 수율 (%, 완전히 램프업된 이후)", "combo_qlc_yield_ramp_coef": "수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)", "combo_qlc_max_capa": "Max Wafer capa (콤보가 QLC 레시피로 100% 가동시, wafer/월)", "combo_tlc_density": "Density (Gb/Wafer)", "combo_tlc_mature_yield": "성숙 수율 (%, 완전히 램프업된 이후)", "combo_tlc_yield_ramp_coef": "수율 램프업 속도 계수 (1/개월, 클수록 빨리 성숙 수율 도달)", "combo_tlc_max_capa": "Max Wafer capa (콤보가 TLC 레시피로 100% 가동시, wafer/월)", "er_wafer_combo": "월간 ER wafer 소모량 (콤보, wafer/월) — 콤보 QLC·TLC 레시피 각각 자기 ER 기간(t95) 동안 독립적으로 소모", "er_wafer_dedicated": "월간 ER wafer 소모량 (분리, wafer/월) — 분리 QLC·TLC 라인 각각 자기 ER 기간(t95) 동안 독립적으로 소모", "combo_headcount": "필요 인력 명 수 (콤보 개발시)", "dedicated_headcount": "필요 인력 명 수 (분리 개발시)", "combo_mask_count": "소모 Mask 매수 (콤보 개발시)", "dedicated_mask_count": "소모 Mask 매수 (분리 개발시)", "coef_cost_per_headcount": "인력 1명당 환산 비용 (콤보·분리 공통 계수, currency_unit/명)", "coef_cost_per_mask": "Mask 1매당 환산 비용 (콤보·분리 공통 계수, currency_unit/매)"};
+  var COST_MODEL_ONLY_KEYS = ["qlc_capex_per_wafer", "tlc_capex_per_wafer", "combo_capex_per_wafer", "combo_headcount", "dedicated_headcount", "combo_mask_count", "dedicated_mask_count", "coef_cost_per_headcount", "coef_cost_per_mask"];
+  var RAMP_CHART_MONTHS = 36;
+
+  var initialParams = data.params || {};
+
+  var slider = document.getElementById("ratio");
+  var chartPlaceholder = document.getElementById("chartPlaceholder");
+  var errorBanner = document.getElementById("paramErrors");
+
+  var paramInputs = {};
+  REQUIRED_KEYS.forEach(function (key) {
+    paramInputs[key] = document.getElementById("param_" + key);
+  });
+  var currencyUnitInput = document.getElementById("currencyUnitInput");
+  var bitUnitInput = document.getElementById("bitUnitInput");
+  var ratioStepInput = document.getElementById("ratioStepInput");
+  var exchangeRateInput = document.getElementById("exchangeRateInput");
+  var costModeModelRadio = document.getElementById("costModeModel");
+  var costModeDirectRadio = document.getElementById("costModeDirect");
+  var comboDirectCostInput = document.getElementById("comboDirectCostInput");
+  var dedicatedDirectCostInput = document.getElementById("dedicatedDirectCostInput");
+  var directCostFieldsEl = document.getElementById("directCostFields");
+  var yieldBasisMatureRadio = document.getElementById("yieldBasisMature");
+  var yieldBasisMonthRadio = document.getElementById("yieldBasisMonth");
+  var basisMonthSlider = document.getElementById("basisMonth");
+  var basisMonthReadoutEl = document.getElementById("basisMonthReadout");
+  var basisYieldNoteEl = document.getElementById("basisYieldNote");
+  var chartBitTitleEl = document.getElementById("chartBitTitle");
+  var chartCostTitleEl = document.getElementById("chartCostTitle");
+
+  function resetAllInputs() {
+    REQUIRED_KEYS.forEach(function (key) {
+      var v = initialParams[key];
+      paramInputs[key].value = (v === undefined || v === null || v === "") ? "" : v;
+      paramInputs[key].classList.remove("invalid");
+    });
+    currencyUnitInput.value = data.currency_unit || "cost unit";
+    bitUnitInput.value = data.bit_unit || "bit unit";
+    ratioStepInput.value = initialParams.ratio_step || "5";
+    exchangeRateInput.value = initialParams.exchange_rate_krw_per_usd || "1300";
+    var initialCostMode = initialParams.cost_mode || "model";
+    costModeDirectRadio.checked = initialCostMode === "direct";
+    costModeModelRadio.checked = initialCostMode !== "direct";
+    comboDirectCostInput.value = initialParams.combo_direct_cost_per_gb || "0";
+    dedicatedDirectCostInput.value = initialParams.dedicated_direct_cost_per_gb || "0";
+    updateCostModeUI();
+  }
+
+  function clearAllInputs() {
+    REQUIRED_KEYS.forEach(function (key) {
+      paramInputs[key].value = "";
+      paramInputs[key].classList.remove("invalid");
+    });
+  }
+
+  // Mirrors calc.py's bit_per_wafer / yield_fraction / yield_ramp_fraction /
+  // yield_ramp_t95 / line_ramp_stats / capex_rate_per_wafer / bit_total_gb /
+  // combo_dev_cost / dedicated_dev_cost / sweep / cumulative_ramp_bit_per_wafer
+  // exactly -- keep these in sync if calc.py's formulas change.
+  var GB_PER_GIGABIT = 8;          // 1 GB = 8 Gb (display/output layer only)
+  var WAFER_BATCH_FOR_CAPEX = 10000; // capex_per_wafer is entered per 10K wafers
+  var WON_PER_EOKWON = 100000000;  // 1 억원 = 100,000,000 원 (Cost chart cent/GB only)
+  var CENT_PER_USD = 100;
+  var ONE_YEAR_MONTHS = 12;        // 1-year cumulative window, in months
+  var FIVE_YEAR_MONTHS = 60;       // 5-year cumulative window, in months -- both
+                                    // windows start at production month 1, no
+                                    // shared "development months" skip anymore
+                                    // (see calc.py module docstring / t95 below).
+  function bitPerWafer(density, grossDie, yieldVal) {
+    return density * grossDie * yieldVal;
+  }
+  function yieldFraction(yieldPct) {
+    return yieldPct / 100;
+  }
+  // Mirrors calc.yield_ramp_fraction -- Normalized Exponential Saturation.
+  // t = months elapsed since THIS line/recipe's own production start.
+  function yieldRampFraction(matureYieldPct, rampCoef, t) {
+    return yieldFraction(matureYieldPct) * (1 - Math.exp(-rampCoef * t));
+  }
+  // Mirrors calc.yield_ramp_t95 -- months until this line's/recipe's own
+  // yield reaches 95% of ITS OWN mature yield (independent of the mature
+  // yield value itself); t=0..t95 is that line's/recipe's own ER period.
+  function yieldRampT95(rampCoef) {
+    return Math.log(20) / rampCoef;
+  }
+  // Mirrors calc.yield_ramp_progress_pct -- % of mature yield reached at
+  // month t, independent of the mature yield value itself. Used ONLY by the
+  // "기준 시점" toggle's reference note (never by the base sweep/crossover).
+  function rampProgressPct(rampCoef, t) {
+    return yieldRampFraction(100, rampCoef, t) * 100;
+  }
+  // Mirrors calc.cumulative_ramp_bit_per_wafer -- actual month-by-month sum
+  // of bit-per-wafer over production months t=1..active_months, instead of
+  // a flat monthly_bit_total * active_months multiplication.
+  function cumulativeRampBitPerWafer(matureYieldPct, rampCoef, density, grossDie, activeMonths) {
+    var months = Math.round(activeMonths);
+    var total = 0;
+    for (var t = 1; t <= months; t++) {
+      total += density * grossDie * yieldRampFraction(matureYieldPct, rampCoef, t);
+    }
+    return total;
+  }
+  function capexRatePerWafer(capexPer10kWafer) {
+    return capexPer10kWafer / WAFER_BATCH_FOR_CAPEX;
+  }
+  function bitTotalGb(bitTotal) {
+    return bitTotal / GB_PER_GIGABIT;
+  }
+  // Mirrors calc.cost_per_gb_eokwon_to_cent -- Cost chart y-axis ONLY, and
+  // ONLY used in cost_mode == "model" (direct-mode inputs are already
+  // cent/GB, see chartPointsFromSweep). Assumes costPerGbEokwon is already
+  // a plain numeric 억원 amount.
+  function costPerGbEokwonToCent(costPerGbEokwon, exchangeRate) {
+    if (!(exchangeRate > 0)) return Infinity;
+    var usdPerGb = costPerGbEokwon * WON_PER_EOKWON / exchangeRate;
+    return usdPerGb * CENT_PER_USD;
+  }
+  // One-time dev cost is headcount + mask ONLY -- the old ER-wafer cost term
+  // is gone (wafer_total * capex_rate_per_wafer, unchanged, already pays for
+  // every wafer processed, ER or not -- see calc.py module docstring).
+  function comboDevCost(params) {
+    return params.combo_headcount * params.coef_cost_per_headcount
+      + params.combo_mask_count * params.coef_cost_per_mask;
+  }
+  function dedicatedDevCost(params) {
+    return params.dedicated_headcount * params.coef_cost_per_headcount
+      + params.dedicated_mask_count * params.coef_cost_per_mask;
+  }
+  // Mirrors calc.line_ramp_stats -- precomputes this line's/recipe's own
+  // t95 and its cumulative bit-per-wafer over both cumulative windows, full
+  // window and ER-period-only, so sweep rows need only one multiply/subtract
+  // per window instead of a month-by-month loop per ratio.
+  function lineRampStats(matureYieldPct, rampCoef, density, grossDie) {
+    var t95 = yieldRampT95(rampCoef);
+    return {
+      t95: t95,
+      bpw1y: cumulativeRampBitPerWafer(matureYieldPct, rampCoef, density, grossDie, ONE_YEAR_MONTHS),
+      bpw5y: cumulativeRampBitPerWafer(matureYieldPct, rampCoef, density, grossDie, FIVE_YEAR_MONTHS),
+      bpwEr1y: cumulativeRampBitPerWafer(matureYieldPct, rampCoef, density, grossDie, Math.min(t95, ONE_YEAR_MONTHS)),
+      bpwEr5y: cumulativeRampBitPerWafer(matureYieldPct, rampCoef, density, grossDie, Math.min(t95, FIVE_YEAR_MONTHS)),
+    };
+  }
+  // Mirrors calc.sweep's window_totals -- total bit (unchanged formula) and
+  // sale-only bit (total minus the bit the ER-consumed wafers would have
+  // produced) for one scenario over one cumulative window ("1y" or "5y"),
+  // summing the QLC-recipe/line and TLC-recipe/line contributions.
+  function windowTotals(waferQlc, waferTlc, erRate, statsQlc, statsTlc, windowKey) {
+    var bpwKey = "bpw" + windowKey, bpwErKey = "bpwEr" + windowKey;
+    var qlcTotal = waferQlc * statsQlc[bpwKey];
+    var tlcTotal = waferTlc * statsTlc[bpwKey];
+    var qlcErWafers = Math.min(erRate, waferQlc);
+    var tlcErWafers = Math.min(erRate, waferTlc);
+    var qlcSale = qlcTotal - qlcErWafers * statsQlc[bpwErKey];
+    var tlcSale = tlcTotal - tlcErWafers * statsTlc[bpwErKey];
+    return { total: qlcTotal + tlcTotal, sale: qlcSale + tlcSale };
+  }
+  // Mirrors calc.full_buildout -- ratio-independent total investment if each
+  // scenario built every one of its lines out to its own 100%-utilization
+  // max capacity. combo is one physical line, represented by
+  // combo_qlc_max_capa (see calc.COMBO_FULL_CAPEX_ASSUMPTION / README /
+  // report.md for why). Only meaningful in cost_mode == "model" -- shown as
+  // TEXT (fullBuildoutNote), not a chart.
+  function fullBuildout(params) {
+    var dedicated = capexRatePerWafer(params.qlc_capex_per_wafer) * params.qlc_max_capa
+      + capexRatePerWafer(params.tlc_capex_per_wafer) * params.tlc_max_capa
+      + dedicatedDevCost(params);
+    var combo = capexRatePerWafer(params.combo_capex_per_wafer) * params.combo_qlc_max_capa
+      + comboDevCost(params);
+    return { combo: combo, dedicated: dedicated };
+  }
+  function computeSweep(params, ratioStep) {
+    var bpwComboQlc = bitPerWafer(params.combo_qlc_density, params.combo_gross_die, yieldFraction(params.combo_qlc_mature_yield));
+    var bpwComboTlc = bitPerWafer(params.combo_tlc_density, params.combo_gross_die, yieldFraction(params.combo_tlc_mature_yield));
+    var bpwDedQlc = bitPerWafer(params.qlc_density, params.qlc_gross_die, yieldFraction(params.qlc_mature_yield));
+    var bpwDedTlc = bitPerWafer(params.tlc_density, params.tlc_gross_die, yieldFraction(params.tlc_mature_yield));
+    var comboDev = comboDevCost(params);
+    var dedDev = dedicatedDevCost(params);
+
+    // Per-line/recipe ramp stats (t95 + cumulative bit-per-wafer over both
+    // cumulative windows) -- independent of the ratio, computed once and
+    // reused across every row below.
+    var statsComboQlc = lineRampStats(params.combo_qlc_mature_yield, params.combo_qlc_yield_ramp_coef, params.combo_qlc_density, params.combo_gross_die);
+    var statsComboTlc = lineRampStats(params.combo_tlc_mature_yield, params.combo_tlc_yield_ramp_coef, params.combo_tlc_density, params.combo_gross_die);
+    var statsDedQlc = lineRampStats(params.qlc_mature_yield, params.qlc_yield_ramp_coef, params.qlc_density, params.qlc_gross_die);
+    var statsDedTlc = lineRampStats(params.tlc_mature_yield, params.tlc_yield_ramp_coef, params.tlc_density, params.tlc_gross_die);
+
+    function rowAt(r) {
+      var qlcShare = r / 100, tlcShare = (100 - r) / 100;
+      // Each line sweeps ITS OWN 100%-utilization max capa by the ratio --
+      // not a shared fab-wide pool. wafer_total never changes because of ER
+      // wafers -- they're carved OUT of it, not added on top.
+      var waferQlcDed = params.qlc_max_capa * qlcShare;
+      var waferTlcDed = params.tlc_max_capa * tlcShare;
+      var waferQlcCombo = params.combo_qlc_max_capa * qlcShare;
+      var waferTlcCombo = params.combo_tlc_max_capa * tlcShare;
+      var comboBit = waferQlcCombo * bpwComboQlc + waferTlcCombo * bpwComboTlc;
+      var comboCost = capexRatePerWafer(params.combo_capex_per_wafer) * (waferQlcCombo + waferTlcCombo) + comboDev;
+      var dedBit = waferQlcDed * bpwDedQlc + waferTlcDed * bpwDedTlc;
+      var dedCost = capexRatePerWafer(params.qlc_capex_per_wafer) * waferQlcDed
+        + capexRatePerWafer(params.tlc_capex_per_wafer) * waferTlcDed + dedDev;
+      var comboBitGb = bitTotalGb(comboBit);
+      var dedBitGb = bitTotalGb(dedBit);
+
+      // Cumulative (1-year/5-year) fields. Cost does not depend on yield
+      // (paid per wafer processed), so it's a flat monthly rate times the
+      // FULL window length (no development-months skip anymore) + dev_cost
+      // added ONCE. Bit DOES depend on yield, which ramps up over time, so
+      // it's the actual month-by-month sum (via windowTotals/lineRampStats
+      // above) -- both a TOTAL figure (unchanged formula) and a sale-only
+      // figure that nets out each line's/recipe's own ER wafer consumption.
+      var comboMonthlyWaferCost = comboCost - comboDev;
+      var dedMonthlyWaferCost = dedCost - dedDev;
+
+      var fiveYearCombo = windowTotals(waferQlcCombo, waferTlcCombo, params.er_wafer_combo, statsComboQlc, statsComboTlc, "5y");
+      var oneYearCombo = windowTotals(waferQlcCombo, waferTlcCombo, params.er_wafer_combo, statsComboQlc, statsComboTlc, "1y");
+      var fiveYearDed = windowTotals(waferQlcDed, waferTlcDed, params.er_wafer_dedicated, statsDedQlc, statsDedTlc, "5y");
+      var oneYearDed = windowTotals(waferQlcDed, waferTlcDed, params.er_wafer_dedicated, statsDedQlc, statsDedTlc, "1y");
+
+      var fiveYearComboCost = comboMonthlyWaferCost * FIVE_YEAR_MONTHS + comboDev;
+      var oneYearComboCost = comboMonthlyWaferCost * ONE_YEAR_MONTHS + comboDev;
+      var fiveYearDedCost = dedMonthlyWaferCost * FIVE_YEAR_MONTHS + dedDev;
+      var oneYearDedCost = dedMonthlyWaferCost * ONE_YEAR_MONTHS + dedDev;
+
+      return {
+        qlc_ratio: r, tlc_ratio: 100 - r,
+        wafer_qlc_dedicated: waferQlcDed, wafer_tlc_dedicated: waferTlcDed,
+        wafer_qlc_combo: waferQlcCombo, wafer_tlc_combo: waferTlcCombo,
+        combo_bit_total: comboBit, combo_cost_total: comboCost,
+        combo_cost_per_bit: comboBit > 0 ? comboCost / comboBit : Infinity,
+        dedicated_bit_total: dedBit, dedicated_cost_total: dedCost,
+        dedicated_cost_per_bit: dedBit > 0 ? dedCost / dedBit : Infinity,
+        combo_bit_total_gb: comboBitGb, dedicated_bit_total_gb: dedBitGb,
+        combo_cost_per_gb: comboBitGb > 0 ? comboCost / comboBitGb : Infinity,
+        dedicated_cost_per_gb: dedBitGb > 0 ? dedCost / dedBitGb : Infinity,
+        five_year_combo_bit_total: fiveYearCombo.total,
+        five_year_combo_bit_total_gb: bitTotalGb(fiveYearCombo.total),
+        five_year_combo_sale_bit_total: fiveYearCombo.sale,
+        five_year_combo_sale_bit_total_gb: bitTotalGb(fiveYearCombo.sale),
+        five_year_combo_cost_total: fiveYearComboCost,
+        five_year_combo_cost_per_bit: fiveYearCombo.total > 0 ? fiveYearComboCost / fiveYearCombo.total : Infinity,
+        five_year_combo_cost_per_gb: bitTotalGb(fiveYearCombo.total) > 0 ? fiveYearComboCost / bitTotalGb(fiveYearCombo.total) : Infinity,
+        five_year_dedicated_bit_total: fiveYearDed.total,
+        five_year_dedicated_bit_total_gb: bitTotalGb(fiveYearDed.total),
+        five_year_dedicated_sale_bit_total: fiveYearDed.sale,
+        five_year_dedicated_sale_bit_total_gb: bitTotalGb(fiveYearDed.sale),
+        five_year_dedicated_cost_total: fiveYearDedCost,
+        five_year_dedicated_cost_per_bit: fiveYearDed.total > 0 ? fiveYearDedCost / fiveYearDed.total : Infinity,
+        five_year_dedicated_cost_per_gb: bitTotalGb(fiveYearDed.total) > 0 ? fiveYearDedCost / bitTotalGb(fiveYearDed.total) : Infinity,
+        one_year_combo_bit_total: oneYearCombo.total,
+        one_year_combo_bit_total_gb: bitTotalGb(oneYearCombo.total),
+        one_year_combo_sale_bit_total: oneYearCombo.sale,
+        one_year_combo_sale_bit_total_gb: bitTotalGb(oneYearCombo.sale),
+        one_year_combo_cost_total: oneYearComboCost,
+        one_year_combo_cost_per_bit: oneYearCombo.total > 0 ? oneYearComboCost / oneYearCombo.total : Infinity,
+        one_year_combo_cost_per_gb: bitTotalGb(oneYearCombo.total) > 0 ? oneYearComboCost / bitTotalGb(oneYearCombo.total) : Infinity,
+        one_year_dedicated_bit_total: oneYearDed.total,
+        one_year_dedicated_bit_total_gb: bitTotalGb(oneYearDed.total),
+        one_year_dedicated_sale_bit_total: oneYearDed.sale,
+        one_year_dedicated_sale_bit_total_gb: bitTotalGb(oneYearDed.sale),
+        one_year_dedicated_cost_total: oneYearDedCost,
+        one_year_dedicated_cost_per_bit: oneYearDed.total > 0 ? oneYearDedCost / oneYearDed.total : Infinity,
+        one_year_dedicated_cost_per_gb: bitTotalGb(oneYearDed.total) > 0 ? oneYearDedCost / bitTotalGb(oneYearDed.total) : Infinity,
+      };
+    }
+    var rows = [], r = 0;
+    while (r <= 100) { rows.push(rowAt(r)); r += ratioStep; }
+    if (rows[rows.length - 1].qlc_ratio !== 100) rows.push(rowAt(100));
+    return { rows: rows, comboDev: comboDev, dedDev: dedDev };
+  }
+
+  // Mirrors calc.yield_ramp_fraction, chosen either as the mature yield
+  // (default) or the actual ramped yield at a specific month -- feeds ONLY
+  // computeDisplaySweep below (charts 1-2 + the table's Bit 생산량/Cost per
+  // bit cells), never the base sweep()/computeSweep above.
+  function yieldFractionAtBasis(matureYieldPct, rampCoef, mode, months) {
+    return mode === "month" ? yieldRampFraction(matureYieldPct, rampCoef, months) : yieldFraction(matureYieldPct);
+  }
+  // Recomputes ONLY the monthly Bit/Cost-per-bit/Cost-per-GB figures using
+  // the chosen yield basis -- wafer counts and cost totals are reused as-is
+  // from baseRows (cost never depends on yield), only bit_per_wafer (and
+  // everything derived from it) changes. baseRows is always the base
+  // "sweep" array (mature-yield, ratio-ordered) so the two arrays share the
+  // same length/qlc_ratio order and can be indexed together.
+  function computeDisplaySweep(params, baseRows, mode, months) {
+    var yComboQlc = yieldFractionAtBasis(params.combo_qlc_mature_yield, params.combo_qlc_yield_ramp_coef, mode, months);
+    var yComboTlc = yieldFractionAtBasis(params.combo_tlc_mature_yield, params.combo_tlc_yield_ramp_coef, mode, months);
+    var yDedQlc = yieldFractionAtBasis(params.qlc_mature_yield, params.qlc_yield_ramp_coef, mode, months);
+    var yDedTlc = yieldFractionAtBasis(params.tlc_mature_yield, params.tlc_yield_ramp_coef, mode, months);
+    var bpwComboQlc = bitPerWafer(params.combo_qlc_density, params.combo_gross_die, yComboQlc);
+    var bpwComboTlc = bitPerWafer(params.combo_tlc_density, params.combo_gross_die, yComboTlc);
+    var bpwDedQlc = bitPerWafer(params.qlc_density, params.qlc_gross_die, yDedQlc);
+    var bpwDedTlc = bitPerWafer(params.tlc_density, params.tlc_gross_die, yDedTlc);
+    return baseRows.map(function (row) {
+      var comboBit = row.wafer_qlc_combo * bpwComboQlc + row.wafer_tlc_combo * bpwComboTlc;
+      var dedBit = row.wafer_qlc_dedicated * bpwDedQlc + row.wafer_tlc_dedicated * bpwDedTlc;
+      var comboBitGb = bitTotalGb(comboBit);
+      var dedBitGb = bitTotalGb(dedBit);
+      return {
+        qlc_ratio: row.qlc_ratio,
+        combo_bit_total: comboBit,
+        dedicated_bit_total: dedBit,
+        combo_bit_total_gb: comboBitGb,
+        dedicated_bit_total_gb: dedBitGb,
+        combo_cost_per_bit: comboBit > 0 ? row.combo_cost_total / comboBit : Infinity,
+        dedicated_cost_per_bit: dedBit > 0 ? row.dedicated_cost_total / dedBit : Infinity,
+        combo_cost_per_gb: comboBitGb > 0 ? row.combo_cost_total / comboBitGb : Infinity,
+        dedicated_cost_per_gb: dedBitGb > 0 ? row.dedicated_cost_total / dedBitGb : Infinity,
+      };
+    });
+  }
+  // Chart-point mapper for charts 1-2 ONLY (the ones the "기준 시점" toggle
+  // affects) -- unlike chartPointsFromSweep below, this never touches
+  // five_year_* fields, since the toggle must never reach the 5-year charts.
+  function displayChartPointsFromSweep(rows, exchangeRate, costMode, directCostCent) {
+    return rows.map(function (r) {
+      var comboCostCent, dedCostCent;
+      if (costMode === "direct") {
+        comboCostCent = directCostCent.combo;
+        dedCostCent = directCostCent.dedicated;
+      } else {
+        comboCostCent = costPerGbEokwonToCent(r.combo_cost_per_gb, exchangeRate);
+        dedCostCent = costPerGbEokwonToCent(r.dedicated_cost_per_gb, exchangeRate);
+      }
+      return {
+        qlc_ratio: r.qlc_ratio,
+        combo_bit_100m_gb: r.combo_bit_total_gb / 1e8,
+        dedicated_bit_100m_gb: r.dedicated_bit_total_gb / 1e8,
+        combo_cost_per_gb_cent: comboCostCent,
+        dedicated_cost_per_gb_cent: dedCostCent,
+      };
+    });
+  }
+  function currentYieldBasisMode() {
+    return yieldBasisMonthRadio.checked ? "month" : "mature";
+  }
+  function currentYieldBasisMonths() {
+    return Number(basisMonthSlider.value);
+  }
+  function updateBasisModeUI() {
+    basisMonthSlider.disabled = currentYieldBasisMode() !== "month";
+  }
+
+  var sweep = [], comboDev = 0, dedDev = 0;
+  var buildout = { combo: 0, dedicated: 0 };
+  var currentParams = {};
+  var currentCostMode = "model";
+  var currentDirectCosts = { combo: 0, dedicated: 0 };
+
+  function fmt(n) {
+    if (!isFinite(n)) return "-";
+    return n.toLocaleString(undefined, { maximumFractionDigits: n < 1 ? 6 : 0 });
+  }
+
+  function nearestRowIndex(rows, ratio) {
+    var bestIdx = 0, bestDiff = Infinity;
+    for (var i = 0; i < rows.length; i++) {
+      var d = Math.abs(rows[i].qlc_ratio - ratio);
+      if (d < bestDiff) { bestDiff = d; bestIdx = i; }
+    }
+    return bestIdx;
+  }
+
+  function escapeXml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function fmtAxisTick(v) {
+    if (!isFinite(v)) return "-";
+    if (v === 0) return "0";
+    var abs = Math.abs(v);
+    var digits = abs < 1 ? 3 : abs < 100 ? 1 : 0;
+    return Number(v.toFixed(digits)).toLocaleString();
+  }
+
+  // yAxisUnit is drawn directly on the axis (rotated label + numeric ticks)
+  // so the chart never reads as an arbitrary-unit line. xOpts generalizes
+  // the x-axis: {key, min, max, ticks, tickFormat} -- defaults to the
+  // original qlc_ratio 0-100% behavior when omitted (charts 1-4); the
+  // yield-ramp charts (5-6) pass key:"month", min:0, max:RAMP_CHART_MONTHS.
+  function lineChart(svgEl, points, series, yAxisUnit, xOpts) {
+    xOpts = xOpts || {};
+    var xKey = xOpts.key || "qlc_ratio";
+    var xMin = xOpts.min !== undefined ? xOpts.min : 0;
+    var xMax = xOpts.max !== undefined ? xOpts.max : 100;
+    var xTicks = xOpts.ticks || [0, 25, 50, 75, 100];
+    var xTickFormat = xOpts.tickFormat || function (t) { return t + "%"; };
+
+    var W = 640, H = 220, padL = 58, padR = 12, padT = 12, padB = 24;
+    var ys = [];
+    series.forEach(function (s) {
+      points.forEach(function (p) { ys.push(p[s.key]); });
+    });
+    var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+    if (yMin === yMax) { yMin -= 1; yMax += 1; }
+    var pad = (yMax - yMin) * 0.08;
+    yMin -= pad; yMax += pad;
+    function xPix(x) { return padL + ((x - xMin) / (xMax - xMin)) * (W - padL - padR); }
+    function yPix(y) { return H - padB - ((y - yMin) / (yMax - yMin)) * (H - padT - padB); }
+
+    var svg = "";
+    var yTickCount = 4;
+    for (var ti = 0; ti <= yTickCount; ti++) {
+      var tv = yMin + (yMax - yMin) * (ti / yTickCount);
+      var ty = yPix(tv);
+      svg += '<line x1="' + padL + '" y1="' + ty.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + ty.toFixed(1) +
+        '" stroke="var(--border)" stroke-width="1" opacity="0.35" />';
+      svg += '<text class="axis-label" x="' + (padL - 8) + '" y="' + (ty + 3).toFixed(1) +
+        '" text-anchor="end">' + fmtAxisTick(tv) + '</text>';
+    }
+    series.forEach(function (s) {
+      var path = points.map(function (p, i) {
+        return (i === 0 ? "M" : "L") + xPix(p[xKey]).toFixed(1) + "," + yPix(p[s.key]).toFixed(1);
+      }).join(" ");
+      svg += '<path d="' + path + '" fill="none" stroke="' + s.color + '" stroke-width="2.5" />';
+    });
+    svg += '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (H - padB) +
+      '" stroke="var(--border)" />';
+    svg += '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) +
+      '" stroke="var(--border)" />';
+    xTicks.forEach(function (t) {
+      svg += '<text class="axis-label" x="' + xPix(t) + '" y="' + (H - padB + 14) + '" text-anchor="middle">' + xTickFormat(t) + '</text>';
+    });
+    if (yAxisUnit) {
+      var midY = (padT + (H - padB)) / 2;
+      svg += '<text class="axis-label axis-unit-label" x="14" y="' + midY.toFixed(1) +
+        '" text-anchor="middle" transform="rotate(-90 14 ' + midY.toFixed(1) + ')">' +
+        escapeXml(yAxisUnit) + '</text>';
+    }
+    svgEl.innerHTML = svg;
+    return { xPix: xPix, yPix: yPix, padT: padT, H: H, padB: padB };
+  }
+
+  // Builds the two-series point array for a yield-ramp reference chart --
+  // fixed x=month domain 0..RAMP_CHART_MONTHS, independent of the ratio
+  // slider. Mirrors calc.yield_ramp_curve.
+  function combinedRampPoints(matureA, coefA, matureB, coefB, months) {
+    var pts = [];
+    for (var t = 0; t <= months; t++) {
+      pts.push({
+        month: t,
+        dedicated_yield_pct: yieldRampFraction(matureA, coefA, t) * 100,
+        combo_yield_pct: yieldRampFraction(matureB, coefB, t) * 100,
+      });
+    }
+    return pts;
+  }
+
+  function updateUnitLabels() {
+    var bitUnit = bitUnitInput.value.trim() || "bit unit";
+    var currencyUnit = currencyUnitInput.value.trim() || "cost unit";
+    document.querySelectorAll(".unit-bit").forEach(function (el) { el.textContent = bitUnit; });
+    document.querySelectorAll(".unit-currency").forEach(function (el) { el.textContent = currencyUnit; });
+    // chartCostTitle is fixed to cent/GB (see costPerGbEokwonToCent) and no
+    // longer depends on currencyUnit -- only the results table's Cost rows
+    // (".unit-currency" above) still use currency_unit.
+  }
+
+  function readExchangeRate() {
+    var raw = exchangeRateInput.value.trim();
+    var num = Number(raw);
+    var valid = raw !== "" && isFinite(num) && num > 0;
+    exchangeRateInput.classList.toggle("invalid", raw !== "" && !valid);
+    return valid ? num : 1300;
+  }
+
+  function isDirectCostMode() {
+    return costModeDirectRadio.checked;
+  }
+
+  // Disables/greys the capex + dev-cost fields (COST_MODEL_ONLY_KEYS) when
+  // "GB당 원가 직접 입력" is selected -- those fields are not used and are
+  // skipped by required-field validation entirely in that mode. Bit
+  // production fields (density/gross_die/yield/max_capa) are never disabled.
+  function updateCostModeUI() {
+    var direct = isDirectCostMode();
+    COST_MODEL_ONLY_KEYS.forEach(function (key) {
+      var el = paramInputs[key];
+      el.disabled = direct;
+      if (direct) el.classList.remove("invalid");
+    });
+    directCostFieldsEl.style.display = direct ? "grid" : "none";
+    if (!direct) {
+      comboDirectCostInput.classList.remove("invalid");
+      dedicatedDirectCostInput.classList.remove("invalid");
+    }
+  }
+
+  // Bit charts (1, 3) are fixed at 억GB (10^8 GB); cost charts (2, 4) are
+  // fixed at cent/GB -- in cost_mode "model", converted from the
+  // already-억원-denominated cost_per_gb via the current
+  // exchange_rate_krw_per_usd input (see costPerGbEokwonToCent); in
+  // cost_mode "direct", the two direct cent/GB inputs are used AS-IS, flat
+  // across every ratio (no eokwon conversion, no ratio dependency). Never
+  // used for the crossover comparison (that stays in raw Gb/currency_unit
+  // terms in model mode).
+  function chartPointsFromSweep(rows, exchangeRate, costMode, directCostCent) {
+    return rows.map(function (r) {
+      var comboCostCent, dedCostCent, fiveYearComboCostCent, fiveYearDedCostCent;
+      if (costMode === "direct") {
+        comboCostCent = directCostCent.combo;
+        dedCostCent = directCostCent.dedicated;
+        fiveYearComboCostCent = directCostCent.combo;
+        fiveYearDedCostCent = directCostCent.dedicated;
+      } else {
+        comboCostCent = costPerGbEokwonToCent(r.combo_cost_per_gb, exchangeRate);
+        dedCostCent = costPerGbEokwonToCent(r.dedicated_cost_per_gb, exchangeRate);
+        fiveYearComboCostCent = costPerGbEokwonToCent(r.five_year_combo_cost_per_gb, exchangeRate);
+        fiveYearDedCostCent = costPerGbEokwonToCent(r.five_year_dedicated_cost_per_gb, exchangeRate);
+      }
+      return {
+        qlc_ratio: r.qlc_ratio,
+        combo_bit_100m_gb: r.combo_bit_total_gb / 1e8,
+        dedicated_bit_100m_gb: r.dedicated_bit_total_gb / 1e8,
+        combo_cost_per_gb_cent: comboCostCent,
+        dedicated_cost_per_gb_cent: dedCostCent,
+        five_year_combo_bit_100m_gb: r.five_year_combo_bit_total_gb / 1e8,
+        five_year_dedicated_bit_100m_gb: r.five_year_dedicated_bit_total_gb / 1e8,
+        five_year_combo_cost_per_gb_cent: fiveYearComboCostCent,
+        five_year_dedicated_cost_per_gb_cent: fiveYearDedCostCent,
+      };
+    });
+  }
+
+  function clearResults() {
+    ["waferQlcCombo", "waferTlcCombo", "comboBit", "comboCost", "comboCostPerBit",
+      "waferQlcDed", "waferTlcDed", "dedBit", "dedCost", "dedCostPerBit",
+      "comboOneYearBit", "comboFiveYearBit", "dedOneYearBit", "dedFiveYearBit"].forEach(function (id) {
+      document.getElementById(id).textContent = "—";
+    });
+    document.getElementById("qlcPct").textContent = "";
+    document.getElementById("tlcPct").textContent = "";
+    document.getElementById("verdict").textContent = "";
+    document.getElementById("devCostNote").textContent = "";
+    document.getElementById("erInfoNote").textContent = "";
+    document.getElementById("fullBuildoutNote").textContent = "";
+    document.getElementById("introStats").textContent = "";
+    basisYieldNoteEl.textContent = "";
+    basisMonthReadoutEl.textContent = "";
+    ["chartBit", "chartCost", "chartFiveYearBit", "chartFiveYearCost",
+      "chartYieldRampQlc", "chartYieldRampTlc"].forEach(function (id) {
+      document.getElementById(id).innerHTML = "";
+    });
+    chartPlaceholder.style.display = "block";
+    slider.disabled = true;
+  }
+
+  function render() {
+    var ratio = Number(slider.value);
+    var idx = nearestRowIndex(sweep, ratio);
+    var row = sweep[idx];
+
+    // "기준 시점" (yield basis) toggle -- ONLY feeds displaySweep below,
+    // which in turn ONLY feeds charts 1-2 and the table's Bit 생산량/Cost per
+    // bit cells. Every other read of `row` on this page (wafer/월, 1-year/
+    // 5-year cumulative, verdict, dev-cost/ER/full-buildout notes, charts
+    // 3-6) stays on the base `sweep`, i.e. always mature-yield, unaffected
+    // by this toggle.
+    var basisMode = currentYieldBasisMode();
+    var basisMonths = currentYieldBasisMonths();
+    basisMonthReadoutEl.textContent = basisMonths + "개월차";
+    var displaySweep = computeDisplaySweep(currentParams, sweep, basisMode, basisMonths);
+    var displayRow = displaySweep[idx];
+    if (basisMode === "month") {
+      var pctComboQlc = rampProgressPct(currentParams.combo_qlc_yield_ramp_coef, basisMonths);
+      var pctComboTlc = rampProgressPct(currentParams.combo_tlc_yield_ramp_coef, basisMonths);
+      var pctDedQlc = rampProgressPct(currentParams.qlc_yield_ramp_coef, basisMonths);
+      var pctDedTlc = rampProgressPct(currentParams.tlc_yield_ramp_coef, basisMonths);
+      basisYieldNoteEl.textContent =
+        "특정 개월 기준: 생산 시작 후 " + basisMonths + "개월차의 실제 수율을 사용 — 성숙 수율 대비 도달 비율" +
+        "(각 라인/레시피 자기 자신의 yield_ramp_coef 기준, mature_yield 값과 무관): 분리 QLC " + fmt(pctDedQlc) +
+        "% / 분리 TLC " + fmt(pctDedTlc) + "% / 콤보 QLC " + fmt(pctComboQlc) + "% / 콤보 TLC " + fmt(pctComboTlc) + "%.";
+    } else {
+      basisYieldNoteEl.textContent =
+        "성숙 수율(mature yield) 기준 — 아래 두 그래프와 표의 Bit 생산량/Cost per bit는 완전히 램프업된 이후의 값입니다.";
+    }
+    var basisLabel = basisMode === "month" ? (basisMonths + "개월차 기준") : "성숙 수율 기준";
+    chartBitTitleEl.textContent = "Bit 생산량 vs QLC 비율 (억GB, " + basisLabel + ")";
+    chartCostTitleEl.textContent = "Cost / GB vs QLC 비율 (cent/GB, 낮을수록 유리, " + basisLabel + ")";
+
+    document.getElementById("qlcPct").textContent = "QLC " + row.qlc_ratio + "%";
+    document.getElementById("tlcPct").textContent = "TLC " + row.tlc_ratio + "%";
+    document.getElementById("waferQlcCombo").textContent = fmt(row.wafer_qlc_combo);
+    document.getElementById("waferTlcCombo").textContent = fmt(row.wafer_tlc_combo);
+    document.getElementById("waferQlcDed").textContent = fmt(row.wafer_qlc_dedicated);
+    document.getElementById("waferTlcDed").textContent = fmt(row.wafer_tlc_dedicated);
+    document.getElementById("comboBit").textContent = fmt(displayRow.combo_bit_total);
+    document.getElementById("dedBit").textContent = fmt(displayRow.dedicated_bit_total);
+    document.getElementById("comboOneYearBit").textContent =
+      fmt(row.one_year_combo_bit_total_gb / 1e8) + " / " + fmt(row.one_year_combo_sale_bit_total_gb / 1e8);
+    document.getElementById("comboFiveYearBit").textContent =
+      fmt(row.five_year_combo_bit_total_gb / 1e8) + " / " + fmt(row.five_year_combo_sale_bit_total_gb / 1e8);
+    document.getElementById("dedOneYearBit").textContent =
+      fmt(row.one_year_dedicated_bit_total_gb / 1e8) + " / " + fmt(row.one_year_dedicated_sale_bit_total_gb / 1e8);
+    document.getElementById("dedFiveYearBit").textContent =
+      fmt(row.five_year_dedicated_bit_total_gb / 1e8) + " / " + fmt(row.five_year_dedicated_sale_bit_total_gb / 1e8);
+    document.getElementById("introStats").textContent =
+      "현재 비율(QLC " + row.qlc_ratio + "% / TLC " + row.tlc_ratio + "%) 기준 총 bit 생산량 — " +
+      "콤보 생산 1년간 " + fmt(row.one_year_combo_bit_total_gb / 1e8) + " 억GB / 5년간 " +
+      fmt(row.five_year_combo_bit_total_gb / 1e8) + " 억GB, 분리 생산 1년간 " +
+      fmt(row.one_year_dedicated_bit_total_gb / 1e8) + " 억GB / 5년간 " +
+      fmt(row.five_year_dedicated_bit_total_gb / 1e8) + " 억GB.";
+    updateUnitLabels();
+
+    var currencyUnit = currencyUnitInput.value.trim() || "cost unit";
+    var direct = currentCostMode === "direct";
+
+    if (direct) {
+      document.getElementById("comboCost").textContent = "—";
+      document.getElementById("dedCost").textContent = "—";
+      document.getElementById("comboCostPerBit").textContent = "—";
+      document.getElementById("dedCostPerBit").textContent = "—";
+    } else {
+      // Total cost is yield-independent (cost never depends on bit
+      // production), so it's read from the base `row` regardless of basis --
+      // only Cost/bit (denominator = bit_total) moves with the toggle.
+      document.getElementById("comboCost").textContent = fmt(row.combo_cost_total);
+      document.getElementById("dedCost").textContent = fmt(row.dedicated_cost_total);
+      document.getElementById("comboCostPerBit").textContent = fmt(displayRow.combo_cost_per_bit);
+      document.getElementById("dedCostPerBit").textContent = fmt(displayRow.dedicated_cost_per_bit);
+    }
+
+    var verdict = document.getElementById("verdict");
+    var better = direct
+      ? currentDirectCosts.combo <= currentDirectCosts.dedicated
+      : row.combo_cost_per_bit <= row.dedicated_cost_per_bit;
+    verdict.textContent = better
+      ? "✓ 현재 비율(QLC " + row.qlc_ratio + "% / TLC " + row.tlc_ratio + "%)에서는 콤보 라인이 분리 생산보다 bit당 비용이 낮습니다."
+      : "⚠ 현재 비율(QLC " + row.qlc_ratio + "% / TLC " + row.tlc_ratio + "%)에서는 분리 생산이 bit당 비용이 더 낮습니다.";
+
+    var devCostNoteEl = document.getElementById("devCostNote");
+    if (direct) {
+      devCostNoteEl.textContent =
+        "GB당 원가 직접 입력 모드: 투자비/개발비 입력은 계산에 반영되지 않습니다. Cost/GB (직접입력) — 콤보 " +
+        fmt(currentDirectCosts.combo) + " cent/GB / 분리 " + fmt(currentDirectCosts.dedicated) + " cent/GB.";
+    } else {
+      devCostNoteEl.textContent =
+        "1회성 개발비(인력+Mask 환산만, 모든 비율에 동일하게 반영됨 — ER wafer 비용은 wafer 처리 비용에 이미 포함되어 별도 계상하지 않음): 콤보 " +
+        fmt(comboDev) + " " + currencyUnit + " / 분리 생산 " + fmt(dedDev) + " " + currencyUnit;
+    }
+
+    var erInfoNoteEl = document.getElementById("erInfoNote");
+    var t95ComboQlc = yieldRampT95(currentParams.combo_qlc_yield_ramp_coef);
+    var t95ComboTlc = yieldRampT95(currentParams.combo_tlc_yield_ramp_coef);
+    var t95DedQlc = yieldRampT95(currentParams.qlc_yield_ramp_coef);
+    var t95DedTlc = yieldRampT95(currentParams.tlc_yield_ramp_coef);
+    erInfoNoteEl.textContent =
+      "ER(엔지니어링 런) 기간 — 각 라인/레시피가 자기 성숙수율의 95%에 도달하는 시점(t95)까지, " +
+      "매달 min(월간 소모량, 그 달 wafer_total) 만큼이 판매용에서 ER로 전환됩니다: 콤보 QLC " +
+      fmt(t95ComboQlc) + "개월 / TLC " + fmt(t95ComboTlc) + "개월 (월 " + fmt(currentParams.er_wafer_combo) +
+      " wafer) · 분리 QLC " + fmt(t95DedQlc) + "개월 / TLC " + fmt(t95DedTlc) + "개월 (월 " +
+      fmt(currentParams.er_wafer_dedicated) + " wafer).";
+
+    var fullBuildoutNoteEl = document.getElementById("fullBuildoutNote");
+    if (direct) {
+      fullBuildoutNoteEl.textContent =
+        "전체 투자비용 (Max capa 풀 빌드아웃 기준): GB당 원가 직접 입력 모드에서는 투자비 모델을 사용하지 않으므로 해당 없음.";
+    } else {
+      fullBuildoutNoteEl.textContent =
+        "전체 투자비용 (Max capa 풀 빌드아웃 기준): 콤보 " + fmt(buildout.combo) + " " + currencyUnit +
+        " / 분리 " + fmt(buildout.dedicated) + " " + currencyUnit +
+        " (콤보는 combo_qlc_max_capa를 대표 capa로 사용 — 근거는 report.md/README 참고, 실제 가동 비율과 무관한 고정값)";
+    }
+
+    chartPlaceholder.style.display = "none";
+    var exchangeRate = readExchangeRate();
+    // Charts 1-2 read the basis-toggle-aware displaySweep; charts 3-4 (5-year
+    // cumulative) always read the base sweep (mature-yield), unaffected by
+    // the toggle.
+    var monthlyChartPoints = displayChartPointsFromSweep(displaySweep, exchangeRate, currentCostMode, currentDirectCosts);
+    var fiveYearChartPoints = chartPointsFromSweep(sweep, exchangeRate, currentCostMode, currentDirectCosts);
+    var charts = [
+      { id: "chartBit", series: ["combo_bit_100m_gb", "dedicated_bit_100m_gb"], unit: "억GB", points: monthlyChartPoints },
+      { id: "chartCost", series: ["combo_cost_per_gb_cent", "dedicated_cost_per_gb_cent"], unit: "cent/GB", points: monthlyChartPoints },
+      { id: "chartFiveYearBit", series: ["five_year_combo_bit_100m_gb", "five_year_dedicated_bit_100m_gb"], unit: "억GB", points: fiveYearChartPoints },
+      { id: "chartFiveYearCost", series: ["five_year_combo_cost_per_gb_cent", "five_year_dedicated_cost_per_gb_cent"], unit: "cent/GB", points: fiveYearChartPoints },
+    ];
+    var chartsInfo = charts.map(function (c) {
+      return lineChart(document.getElementById(c.id), c.points,
+        [{ key: c.series[0], color: "var(--combo)" }, { key: c.series[1], color: "var(--dedicated)" }],
+        c.unit);
+    });
+    chartsInfo.forEach(function (info, idx) {
+      var svgEl = document.getElementById(charts[idx].id);
+      var x = info.xPix(row.qlc_ratio);
+      svgEl.innerHTML += '<line x1="' + x + '" y1="' + info.padT + '" x2="' + x + '" y2="' + (info.H - info.padB) +
+        '" stroke="var(--fg)" stroke-width="1" stroke-dasharray="2,3" opacity="0.5" />';
+    });
+
+    // Yield-ramp reference charts -- fixed x=month domain, independent of
+    // the ratio slider (no dashed ratio-indicator line drawn on these two).
+    var rampXOpts = {
+      key: "month", min: 0, max: RAMP_CHART_MONTHS,
+      ticks: [0, 6, 12, 18, 24, 30, 36], tickFormat: function (t) { return t; },
+    };
+    var qlcRampPoints = combinedRampPoints(
+      currentParams.qlc_mature_yield, currentParams.qlc_yield_ramp_coef,
+      currentParams.combo_qlc_mature_yield, currentParams.combo_qlc_yield_ramp_coef,
+      RAMP_CHART_MONTHS
+    );
+    var tlcRampPoints = combinedRampPoints(
+      currentParams.tlc_mature_yield, currentParams.tlc_yield_ramp_coef,
+      currentParams.combo_tlc_mature_yield, currentParams.combo_tlc_yield_ramp_coef,
+      RAMP_CHART_MONTHS
+    );
+    lineChart(document.getElementById("chartYieldRampQlc"), qlcRampPoints,
+      [{ key: "dedicated_yield_pct", color: "var(--dedicated)" }, { key: "combo_yield_pct", color: "var(--combo)" }],
+      "%", rampXOpts);
+    lineChart(document.getElementById("chartYieldRampTlc"), tlcRampPoints,
+      [{ key: "dedicated_yield_pct", color: "var(--dedicated)" }, { key: "combo_yield_pct", color: "var(--combo)" }],
+      "%", rampXOpts);
+  }
+
+  function readRequiredParams() {
+    var values = {}, missing = [];
+    var direct = isDirectCostMode();
+    REQUIRED_KEYS.forEach(function (key) {
+      var el = paramInputs[key];
+      if (direct && COST_MODEL_ONLY_KEYS.indexOf(key) !== -1) {
+        el.classList.remove("invalid");
+        values[key] = 0;
+        return;
+      }
+      var raw = el.value.trim();
+      var num = Number(raw);
+      var valid = raw !== "" && isFinite(num);
+      el.classList.toggle("invalid", !valid);
+      if (valid) { values[key] = num; } else { missing.push(PARAM_LABELS[key] + " (" + key + ")"); }
+    });
+    return { values: values, missing: missing };
+  }
+
+  function readDirectCostInputs() {
+    var direct = isDirectCostMode();
+    var result = { combo: 0, dedicated: 0, missing: [] };
+    if (!direct) {
+      comboDirectCostInput.classList.remove("invalid");
+      dedicatedDirectCostInput.classList.remove("invalid");
+      return result;
+    }
+    [
+      ["combo", comboDirectCostInput, "콤보 GB당 원가 (combo_direct_cost_per_gb)"],
+      ["dedicated", dedicatedDirectCostInput, "분리 GB당 원가 (dedicated_direct_cost_per_gb)"],
+    ].forEach(function (t) {
+      var raw = t[1].value.trim();
+      var num = Number(raw);
+      var valid = raw !== "" && isFinite(num) && num >= 0;
+      t[1].classList.toggle("invalid", !valid);
+      if (valid) { result[t[0]] = num; } else { result.missing.push(t[2]); }
+    });
+    return result;
+  }
+
+  function readRatioStep() {
+    var raw = ratioStepInput.value.trim();
+    var num = parseInt(raw, 10);
+    var valid = raw !== "" && isFinite(num) && num > 0 && num <= 100;
+    ratioStepInput.classList.toggle("invalid", raw !== "" && !valid);
+    return valid ? num : 5;
+  }
+
+  function recomputeAndRender() {
+    updateCostModeUI();
+    var parsed = readRequiredParams();
+    var directCosts = readDirectCostInputs();
+    var missing = parsed.missing.concat(directCosts.missing);
+    if (missing.length > 0) {
+      errorBanner.style.display = "block";
+      errorBanner.textContent = "다음 파라미터를 입력하거나 값을 확인해 주세요: " + missing.join(", ");
+      clearResults();
+      return;
+    }
+    errorBanner.style.display = "none";
+    slider.disabled = false;
+
+    var ratioStep = readRatioStep();
+    slider.step = ratioStep;
+    var snapped = Math.round(Number(slider.value) / ratioStep) * ratioStep;
+    slider.value = Math.max(0, Math.min(100, snapped));
+
+    currentParams = parsed.values;
+    currentCostMode = isDirectCostMode() ? "direct" : "model";
+    currentDirectCosts = directCosts;
+    var result = computeSweep(parsed.values, ratioStep);
+    sweep = result.rows;
+    comboDev = result.comboDev;
+    dedDev = result.dedDev;
+    buildout = fullBuildout(parsed.values);
+    render();
+  }
+
+  slider.addEventListener("input", render);
+  // "기준 시점" toggle is a pure display lens over the already-computed base
+  // sweep -- no param recompute needed, just a re-render.
+  yieldBasisMatureRadio.addEventListener("change", function () {
+    updateBasisModeUI();
+    if (sweep.length > 0) render();
+  });
+  yieldBasisMonthRadio.addEventListener("change", function () {
+    updateBasisModeUI();
+    if (sweep.length > 0) render();
+  });
+  basisMonthSlider.addEventListener("input", function () {
+    if (sweep.length > 0) render();
+  });
+  REQUIRED_KEYS.forEach(function (key) {
+    paramInputs[key].addEventListener("input", recomputeAndRender);
+  });
+  bitUnitInput.addEventListener("input", updateUnitLabels);
+  currencyUnitInput.addEventListener("input", function () {
+    // currency_unit no longer affects charts 1-4 (fixed cent/GB), but the
+    // full-buildout TEXT line draws its number directly in currency_unit
+    // (no cent conversion) -- redraw so that text stays in sync without a
+    // full param recompute.
+    updateUnitLabels();
+    if (sweep.length > 0) render();
+  });
+  exchangeRateInput.addEventListener("input", function () {
+    // exchange_rate_krw_per_usd feeds the Cost chart's cent/GB axis directly
+    // (model mode only) -- redraw so the axis stays in sync without a full
+    // param recompute.
+    if (sweep.length > 0) render();
+  });
+  ratioStepInput.addEventListener("input", recomputeAndRender);
+  costModeModelRadio.addEventListener("change", recomputeAndRender);
+  costModeDirectRadio.addEventListener("change", recomputeAndRender);
+  comboDirectCostInput.addEventListener("input", recomputeAndRender);
+  dedicatedDirectCostInput.addEventListener("input", recomputeAndRender);
+  document.getElementById("resetAll").addEventListener("click", function () {
+    resetAllInputs();
+    recomputeAndRender();
+  });
+  document.getElementById("clearAll").addEventListener("click", function () {
+    clearAllInputs();
+    recomputeAndRender();
+  });
+
+  updateBasisModeUI();
+  resetAllInputs();
+  recomputeAndRender();
+})();
+</script>
+</body>
+</html>

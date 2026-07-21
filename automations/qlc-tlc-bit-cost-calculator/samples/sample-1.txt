@@ -1,0 +1,127 @@
+# QLC vs TLC bit-cost calculator — sample params (synthetic, not real fab data)
+# Units are free-form EXCEPT the conventions the calculator itself converts:
+#   *_mature_yield       = percentage (82 means 82%), divided by 100 internally
+#                          -- this is the FULLY RAMPED yield; see
+#                          *_yield_ramp_coef below for how yield ramps up to
+#                          this value over the first months of production
+#   *_yield_ramp_coef    = ramp-up speed, 1/month (larger = faster ramp to
+#                          mature_yield). yield_fraction(t) = mature_yield/100
+#                          * (1 - exp(-ramp_coef * t)), t = months since THIS
+#                          line/recipe's own production start (t=0)
+#   *_capex_per_wafer   = cost per 10,000 wafers, divided by 10000 internally
+#   *_density           = labeled Gb/Wafer; bit totals get an extra ÷8 Gb->GB
+#                          conversion at the display/output layer only
+#   *_max_capa          = wafer/월 (wafer count per month), unchanged
+#   er_wafer_combo/dedicated = MONTHLY ER-wafer consumption rate (wafer/월,
+#                          NOT a one-time total) -- carved out of each
+#                          line's/recipe's own wafer_total during its own ER
+#                          period (t <= t95 = ln(20)/yield_ramp_coef), not
+#                          produced on top of it. See calc.py module docstring.
+#   currency_unit = label only, e.g. "억원" or "$M"
+#   bit_unit      = label only, e.g. "Gb"
+# bit production (monthly snapshot, mature yield assumed) =
+#   density_per_die * grossdie_per_wafer * (mature_yield/100) * wafer_count
+# cost            = (capex_per_wafer/10000) * wafer_count (+ one-time dev cost)
+#
+# Combo and dedicated each sweep the SAME QLC:TLC ratio r, but each line
+# brings its OWN independent 100%-utilization max wafer capacity (own
+# investment, own line) — NOT a single shared fab-wide pool. At ratio r,
+# a line runs r% (or (100-r)%) of its OWN max capa.
+currency_unit=억원
+bit_unit=Gb
+
+# --- Dedicated QLC-only line ---
+# capex: 6,200억원 per 10,000 wafers (== 0.62억원/wafer effective rate)
+qlc_capex_per_wafer=6200
+qlc_density=48
+qlc_gross_die=520
+qlc_mature_yield=82
+# Ramp-up speed (1/month) to reach 82% mature yield -- brand-new die/line,
+# ramps at a moderate pace.
+qlc_yield_ramp_coef=0.15
+# QLC-only line's own max capa at 100% utilization (wafer/월)
+qlc_max_capa=85000
+
+# --- Dedicated TLC-only line ---
+tlc_capex_per_wafer=5800
+tlc_density=32
+tlc_gross_die=520
+tlc_mature_yield=88
+tlc_yield_ramp_coef=0.15
+# TLC-only line's own max capa at 100% utilization (wafer/월) — a
+# separate investment from the QLC-only line above, so it need not match.
+tlc_max_capa=75000
+
+# --- Combo (flexible) line: one QLC-native die that also runs a TLC recipe.
+#     capex_per_wafer / gross_die are shared (same physical line + die); only
+#     density / yield differ by which recipe is running. Combo's capex/wafer
+#     is cheaper than either dedicated line (one investment, two products). ---
+combo_capex_per_wafer=5000
+combo_gross_die=520
+
+combo_qlc_density=48
+combo_qlc_mature_yield=80
+# Reuses an established QLC die design, so it ramps up slightly faster than
+# a brand-new dedicated line.
+combo_qlc_yield_ramp_coef=0.2
+# Combo line's max capa when running the QLC recipe at 100% (wafer/월)
+combo_qlc_max_capa=80000
+
+# Forcing TLC mode onto a QLC-native die is markedly less bit-efficient than
+# a true TLC design (combo_tlc_density=20 << dedicated tlc_density=32 above,
+# combo_tlc_mature_yield=78 < dedicated tlc_mature_yield=88) -- this is what
+# keeps dedicated ahead until QLC demand is clearly dominant (crossover near
+# QLC 60%, see below, based on mature-yield monthly snapshot figures).
+combo_tlc_density=20
+combo_tlc_mature_yield=78
+# Forcing a QLC die into TLC mode also takes longer to stabilize than either
+# of the other three lines/recipes.
+combo_tlc_yield_ramp_coef=0.1
+# Combo line's max capa when running the TLC recipe at 100% (wafer/월) —
+# same physical line as combo_qlc_max_capa above, so usually close but not
+# required to match exactly.
+combo_tlc_max_capa=78000
+
+# --- ER (engineering-run/qualification) wafer consumption ---
+# Monthly ER-wafer consumption RATE (wafer/월, NOT a one-time total). Applied
+# independently to BOTH of a scenario's lines/recipes during each one's OWN
+# ER period (t <= that line's/recipe's own t95 = ln(20)/yield_ramp_coef,
+# i.e. the month it reaches 95% of its own mature yield) -- ER wafers are
+# carved OUT of wafer_total (sale + ER), not produced on top of it. Dedicated
+# consumes more per month because it qualifies two separate new products
+# instead of reusing one die.
+er_wafer_combo=40
+er_wafer_dedicated=60
+
+# Headcount required to bring the product up (dedicated needs more: two
+# products qualified in parallel instead of one shared die). One-time dev
+# cost (with mask sets below) -- ER wafers no longer contribute a separate
+# one-time cost term, since wafer_total * capex_per_wafer already pays for
+# every wafer processed, ER or not.
+combo_headcount=15
+dedicated_headcount=25
+
+# Mask sets consumed during development (dedicated needs more: two full
+# mask sets instead of one shared combo mask set).
+combo_mask_count=8
+dedicated_mask_count=14
+
+# Shared dev-cost conversion coefficients (one pair, NOT split combo/dedicated)
+coef_cost_per_headcount=2
+coef_cost_per_mask=3
+
+# Slider granularity for the sweep (percent steps), optional, default 5
+ratio_step=5
+
+# Exchange rate (원/달러), optional, default 1300 -- feeds ONLY the
+# visualization.html Cost chart's fixed cent/GB axis conversion (assumes
+# cost values are already numeric 억원 amounts); no other output is affected.
+exchange_rate_krw_per_usd=1300
+
+# 원가 계산 모드, optional, default "model" (투자비/개발비 모델 기반 계산).
+# "direct" 로 바꾸면 아래 두 GB당 원가 직접 입력값(cent/GB)만 쓰고 투자비/
+# 개발비 입력은 전부 무시함 -- bit 생산량 계산은 이 모드와 무관하게 항상
+# 물리 모델(density/gross_die/수율/max_capa) 그대로 사용.
+cost_mode=model
+combo_direct_cost_per_gb=0
+dedicated_direct_cost_per_gb=0

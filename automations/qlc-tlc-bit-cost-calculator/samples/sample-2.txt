@@ -1,0 +1,78 @@
+# QLC vs TLC bit-cost calculator — sample params (synthetic, not real fab data)
+# A smaller enterprise-SSD-scale scenario in different units, where combo's
+# capex/wafer advantage over dedicated is thin, so dedicated wins across most
+# of the ratio range (crossover near QLC ratio ~75%, i.e. combo only wins
+# when TLC demand is small) -- contrasting sample-1's mid-range crossover.
+#
+# Units are free-form EXCEPT four conventions the calculator itself converts
+# (see sample-1.txt for the full explanation): *_yield is a percentage,
+# *_capex_per_wafer is cost per 10,000 wafers, *_density is Gb/Wafer-labeled
+# (bit totals get an extra display-only ÷8 Gb->GB conversion), *_max_capa is
+# wafer/월.
+currency_unit=$M
+bit_unit=TB
+
+# --- Dedicated QLC-only line ---
+qlc_capex_per_wafer=480
+qlc_density=1.1
+qlc_gross_die=310
+qlc_mature_yield=83
+qlc_yield_ramp_coef=0.15
+# QLC-only line's own max capa at 100% utilization (wafer/월)
+qlc_max_capa=6200
+
+# --- Dedicated TLC-only line ---
+tlc_capex_per_wafer=440
+tlc_density=0.75
+tlc_gross_die=310
+tlc_mature_yield=89
+tlc_yield_ramp_coef=0.15
+# TLC-only line's own max capa at 100% utilization (wafer/월) — a
+# separate, smaller investment than the QLC-only line above.
+tlc_max_capa=5800
+
+# --- Combo (flexible) line: shared capex_per_wafer/gross_die, recipe-specific
+#     density/yield (see sample-1.txt for the modeling rationale) ---
+combo_capex_per_wafer=430
+combo_gross_die=310
+
+combo_qlc_density=1.1
+combo_qlc_mature_yield=80
+combo_qlc_yield_ramp_coef=0.2
+# Combo line's max capa when running the QLC recipe at 100% (wafer/월)
+combo_qlc_max_capa=6000
+
+combo_tlc_density=0.55
+combo_tlc_mature_yield=87
+combo_tlc_yield_ramp_coef=0.1
+# Combo line's max capa when running the TLC recipe at 100% (wafer/월)
+combo_tlc_max_capa=6100
+
+# --- ER (engineering-run/qualification) wafer consumption ---
+# Monthly ER-wafer consumption RATE (wafer/월, NOT a one-time total) -- see
+# sample-1.txt for the full explanation (carved out of wafer_total during
+# each line's/recipe's own ER period, t <= t95 = ln(20)/yield_ramp_coef).
+er_wafer_combo=15
+er_wafer_dedicated=20
+
+# --- One-time dev cost, per scenario (headcount + mask only) ---
+combo_headcount=6
+dedicated_headcount=10
+
+combo_mask_count=4
+dedicated_mask_count=7
+
+# Shared dev-cost conversion coefficients (one pair, NOT split combo/dedicated)
+coef_cost_per_headcount=0.5
+coef_cost_per_mask=0.8
+
+ratio_step=5
+
+# 5년(60개월) 누적 그래프 전용 -- 최초 몇 개월을 개발/품질인증 기간(생산량 0)
+# 으로 볼지, 콤보·분리 공통 값 (optional, default 6).
+dev_ramp_months=6
+
+# 원가 계산 모드, optional, default "model" (samples/sample-1.txt 참고).
+cost_mode=model
+combo_direct_cost_per_gb=0
+dedicated_direct_cost_per_gb=0

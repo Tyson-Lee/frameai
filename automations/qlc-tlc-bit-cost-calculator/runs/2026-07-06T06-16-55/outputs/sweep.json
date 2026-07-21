@@ -1,0 +1,1827 @@
+{
+  "params": {
+    "qlc_capex_per_wafer": 6200.0,
+    "qlc_density": 48.0,
+    "qlc_gross_die": 520.0,
+    "qlc_mature_yield": 82.0,
+    "qlc_yield_ramp_coef": 0.15,
+    "qlc_max_capa": 85000.0,
+    "tlc_capex_per_wafer": 5800.0,
+    "tlc_density": 32.0,
+    "tlc_gross_die": 520.0,
+    "tlc_mature_yield": 88.0,
+    "tlc_yield_ramp_coef": 0.15,
+    "tlc_max_capa": 75000.0,
+    "combo_capex_per_wafer": 5000.0,
+    "combo_gross_die": 520.0,
+    "combo_qlc_density": 48.0,
+    "combo_qlc_mature_yield": 80.0,
+    "combo_qlc_yield_ramp_coef": 0.2,
+    "combo_qlc_max_capa": 80000.0,
+    "combo_tlc_density": 20.0,
+    "combo_tlc_mature_yield": 78.0,
+    "combo_tlc_yield_ramp_coef": 0.1,
+    "combo_tlc_max_capa": 78000.0,
+    "er_wafer_combo": 40.0,
+    "er_wafer_dedicated": 60.0,
+    "combo_headcount": 15.0,
+    "dedicated_headcount": 25.0,
+    "combo_mask_count": 8.0,
+    "dedicated_mask_count": 14.0,
+    "coef_cost_per_headcount": 2.0,
+    "coef_cost_per_mask": 3.0,
+    "currency_unit": "억원",
+    "bit_unit": "Gb",
+    "ratio_step": "5",
+    "exchange_rate_krw_per_usd": "1300",
+    "cost_mode": "model",
+    "combo_direct_cost_per_gb": "0",
+    "dedicated_direct_cost_per_gb": "0"
+  },
+  "sweep": [
+    {
+      "qlc_ratio": 0,
+      "tlc_ratio": 100,
+      "wafer_qlc_dedicated": 0.0,
+      "wafer_tlc_dedicated": 75000.0,
+      "wafer_qlc_combo": 0.0,
+      "wafer_tlc_combo": 78000.0,
+      "combo_bit_total": 632736000.0,
+      "combo_cost_total": 39054.0,
+      "combo_cost_per_bit": 6.172242451828251e-05,
+      "dedicated_bit_total": 1098240000.0,
+      "dedicated_cost_total": 43592.0,
+      "dedicated_cost_per_bit": 3.969259906759907e-05,
+      "combo_bit_total_gb": 79092000.0,
+      "dedicated_bit_total_gb": 137280000.0,
+      "combo_cost_per_gb": 0.0004937793961462601,
+      "dedicated_cost_per_gb": 0.00031754079254079254,
+      "five_year_combo_bit_total": 31962808905.881397,
+      "five_year_combo_bit_total_gb": 3995351113.2351747,
+      "five_year_combo_sale_bit_total": 31956006163.203568,
+      "five_year_combo_sale_bit_total_gb": 3994500770.400446,
+      "five_year_combo_cost_total": 2340054.0,
+      "five_year_combo_cost_per_bit": 7.321177581390265e-05,
+      "five_year_combo_cost_per_gb": 0.0005856942065112212,
+      "five_year_dedicated_bit_total": 59109034629.2085,
+      "five_year_dedicated_bit_total_gb": 7388629328.651063,
+      "five_year_dedicated_sale_bit_total": 59096621459.375916,
+      "five_year_dedicated_sale_bit_total_gb": 7387077682.421989,
+      "five_year_dedicated_cost_total": 2610092.0,
+      "five_year_dedicated_cost_per_bit": 4.415724290496589e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003532579432397271,
+      "one_year_combo_bit_total": 3388631949.0554686,
+      "one_year_combo_bit_total_gb": 423578993.63193357,
+      "one_year_combo_sale_bit_total": 3386894189.081594,
+      "one_year_combo_sale_bit_total_gb": 423361773.63519925,
+      "one_year_combo_cost_total": 468054.0,
+      "one_year_combo_cost_per_bit": 0.00013812476746861315,
+      "one_year_combo_cost_per_gb": 0.0011049981397489052,
+      "one_year_dedicated_bit_total": 7514428932.381068,
+      "one_year_dedicated_bit_total_gb": 939303616.5476335,
+      "one_year_dedicated_sale_bit_total": 7508417389.235164,
+      "one_year_dedicated_sale_bit_total_gb": 938552173.6543955,
+      "one_year_dedicated_cost_total": 522092.0,
+      "one_year_dedicated_cost_per_bit": 6.947859973100667e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005558287978480533
+    },
+    {
+      "qlc_ratio": 5,
+      "tlc_ratio": 95,
+      "wafer_qlc_dedicated": 4250.0,
+      "wafer_tlc_dedicated": 71250.0,
+      "wafer_qlc_combo": 4000.0,
+      "wafer_tlc_combo": 74100.0,
+      "combo_bit_total": 680971200.0,
+      "combo_cost_total": 39104.0,
+      "combo_cost_per_bit": 5.742386755856929e-05,
+      "dedicated_bit_total": 1130313600.0,
+      "dedicated_cost_total": 44052.0,
+      "dedicated_cost_per_bit": 3.8973254855997486e-05,
+      "combo_bit_total_gb": 85121400.0,
+      "dedicated_bit_total_gb": 141289200.0,
+      "combo_cost_per_gb": 0.00045939094046855433,
+      "dedicated_cost_per_gb": 0.0003117860388479799,
+      "five_year_combo_bit_total": 34796236363.76074,
+      "five_year_combo_bit_total_gb": 4349529545.470093,
+      "five_year_combo_sale_bit_total": 34780880755.22005,
+      "five_year_combo_sale_bit_total_gb": 4347610094.402506,
+      "five_year_combo_cost_total": 2343054.0,
+      "five_year_combo_cost_per_bit": 6.733642039632258e-05,
+      "five_year_combo_cost_per_gb": 0.0005386913631705806,
+      "five_year_dedicated_bit_total": 60835287117.81152,
+      "five_year_dedicated_bit_total_gb": 7604410889.72644,
+      "five_year_dedicated_sale_bit_total": 60805523721.96294,
+      "five_year_dedicated_sale_bit_total_gb": 7600690465.245367,
+      "five_year_dedicated_cost_total": 2637692.0,
+      "five_year_dedicated_cost_per_bit": 4.335792802114892e-05,
+      "five_year_dedicated_cost_per_gb": 0.00034686342416919135,
+      "one_year_combo_bit_total": 3849636931.174952,
+      "one_year_combo_bit_total_gb": 481204616.396869,
+      "one_year_combo_sale_bit_total": 3841594805.405355,
+      "one_year_combo_sale_bit_total_gb": 480199350.6756694,
+      "one_year_combo_cost_total": 468654.0,
+      "one_year_combo_cost_per_bit": 0.00012173979218787305,
+      "one_year_combo_cost_per_gb": 0.0009739183375029844,
+      "one_year_dedicated_bit_total": 7733884413.701742,
+      "one_year_dedicated_bit_total_gb": 966735551.7127178,
+      "one_year_dedicated_sale_bit_total": 7719470372.74963,
+      "one_year_dedicated_sale_bit_total_gb": 964933796.5937037,
+      "one_year_dedicated_cost_total": 527612.0,
+      "one_year_dedicated_cost_per_bit": 6.822082821217962e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005457666256974369
+    },
+    {
+      "qlc_ratio": 10,
+      "tlc_ratio": 90,
+      "wafer_qlc_dedicated": 8500.0,
+      "wafer_tlc_dedicated": 67500.0,
+      "wafer_qlc_combo": 8000.0,
+      "wafer_tlc_combo": 70200.0,
+      "combo_bit_total": 729206400.0,
+      "combo_cost_total": 39154.0,
+      "combo_cost_per_bit": 5.369398842357939e-05,
+      "dedicated_bit_total": 1162387200.0,
+      "dedicated_cost_total": 44512.0,
+      "dedicated_cost_per_bit": 3.8293608188390235e-05,
+      "combo_bit_total_gb": 91150800.0,
+      "dedicated_bit_total_gb": 145298400.0,
+      "combo_cost_per_gb": 0.0004295519073886351,
+      "dedicated_cost_per_gb": 0.0003063488655071219,
+      "five_year_combo_bit_total": 37629663821.64008,
+      "five_year_combo_bit_total_gb": 4703707977.70501,
+      "five_year_combo_sale_bit_total": 37614308213.09939,
+      "five_year_combo_sale_bit_total_gb": 4701788526.6374235,
+      "five_year_combo_cost_total": 2346054.0,
+      "five_year_combo_cost_per_bit": 6.234586657802748e-05,
+      "five_year_combo_cost_per_gb": 0.0004987669326242198,
+      "five_year_dedicated_bit_total": 62561539606.414536,
+      "five_year_dedicated_bit_total_gb": 7820192450.801817,
+      "five_year_dedicated_sale_bit_total": 62531776210.56595,
+      "five_year_dedicated_sale_bit_total_gb": 7816472026.320744,
+      "five_year_dedicated_cost_total": 2665292.0,
+      "five_year_dedicated_cost_per_bit": 4.260272392220225e-05,
+      "five_year_dedicated_cost_per_gb": 0.000340821791377618,
+      "one_year_combo_bit_total": 4310641913.2944355,
+      "one_year_combo_bit_total_gb": 538830239.1618044,
+      "one_year_combo_sale_bit_total": 4302599787.5248375,
+      "one_year_combo_sale_bit_total_gb": 537824973.4406047,
+      "one_year_combo_cost_total": 469254.0,
+      "one_year_combo_cost_per_bit": 0.00010885942498558635,
+      "one_year_combo_cost_per_gb": 0.0008708753998846908,
+      "one_year_dedicated_bit_total": 7953339895.022417,
+      "one_year_dedicated_bit_total_gb": 994167486.8778021,
+      "one_year_dedicated_sale_bit_total": 7938925854.070305,
+      "one_year_dedicated_sale_bit_total_gb": 992365731.7587881,
+      "one_year_dedicated_cost_total": 533132.0,
+      "one_year_dedicated_cost_per_bit": 6.703246774775208e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005362597419820166
+    },
+    {
+      "qlc_ratio": 15,
+      "tlc_ratio": 85,
+      "wafer_qlc_dedicated": 12750.0,
+      "wafer_tlc_dedicated": 63750.0,
+      "wafer_qlc_combo": 12000.0,
+      "wafer_tlc_combo": 66300.0,
+      "combo_bit_total": 777441600.0,
+      "combo_cost_total": 39204.0,
+      "combo_cost_per_bit": 5.042693882087092e-05,
+      "dedicated_bit_total": 1194460800.0,
+      "dedicated_cost_total": 44972.0,
+      "dedicated_cost_per_bit": 3.76504611955453e-05,
+      "combo_bit_total_gb": 97180200.0,
+      "dedicated_bit_total_gb": 149307600.0,
+      "combo_cost_per_gb": 0.00040341551056696735,
+      "dedicated_cost_per_gb": 0.0003012036895643624,
+      "five_year_combo_bit_total": 40463091279.519424,
+      "five_year_combo_bit_total_gb": 5057886409.939928,
+      "five_year_combo_sale_bit_total": 40447735670.97873,
+      "five_year_combo_sale_bit_total_gb": 5055966958.872341,
+      "five_year_combo_cost_total": 2349054.0,
+      "five_year_combo_cost_per_bit": 5.8054239696436246e-05,
+      "five_year_combo_cost_per_gb": 0.00046443391757148997,
+      "five_year_dedicated_bit_total": 64287792095.01756,
+      "five_year_dedicated_bit_total_gb": 8035974011.877195,
+      "five_year_dedicated_sale_bit_total": 64258028699.16897,
+      "five_year_dedicated_sale_bit_total_gb": 8032253587.396121,
+      "five_year_dedicated_cost_total": 2692892.0,
+      "five_year_dedicated_cost_per_bit": 4.188807722654244e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003351046178123395,
+      "one_year_combo_bit_total": 4771646895.413918,
+      "one_year_combo_bit_total_gb": 596455861.9267397,
+      "one_year_combo_sale_bit_total": 4763604769.644321,
+      "one_year_combo_sale_bit_total_gb": 595450596.2055402,
+      "one_year_combo_cost_total": 469854.0,
+      "one_year_combo_cost_per_bit": 9.846788966123664e-05,
+      "one_year_combo_cost_per_gb": 0.0007877431172898931,
+      "one_year_dedicated_bit_total": 8172795376.343091,
+      "one_year_dedicated_bit_total_gb": 1021599422.0428864,
+      "one_year_dedicated_sale_bit_total": 8158381335.390978,
+      "one_year_dedicated_sale_bit_total_gb": 1019797666.9238722,
+      "one_year_dedicated_cost_total": 538652.0,
+      "one_year_dedicated_cost_per_bit": 6.590792687153013e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005272634149722411
+    },
+    {
+      "qlc_ratio": 20,
+      "tlc_ratio": 80,
+      "wafer_qlc_dedicated": 17000.0,
+      "wafer_tlc_dedicated": 60000.0,
+      "wafer_qlc_combo": 16000.0,
+      "wafer_tlc_combo": 62400.0,
+      "combo_bit_total": 825676800.0,
+      "combo_cost_total": 39254.0,
+      "combo_cost_per_bit": 4.754160465693114e-05,
+      "dedicated_bit_total": 1226534400.0,
+      "dedicated_cost_total": 45432.0,
+      "dedicated_cost_per_bit": 3.7040950502488963e-05,
+      "combo_bit_total_gb": 103209600.0,
+      "dedicated_bit_total_gb": 153316800.0,
+      "combo_cost_per_gb": 0.0003803328372554491,
+      "dedicated_cost_per_gb": 0.0002963276040199117,
+      "five_year_combo_bit_total": 43296518737.39877,
+      "five_year_combo_bit_total_gb": 5412064842.174847,
+      "five_year_combo_sale_bit_total": 43281163128.85808,
+      "five_year_combo_sale_bit_total_gb": 5410145391.10726,
+      "five_year_combo_cost_total": 2352054.0,
+      "five_year_combo_cost_per_bit": 5.4324321414052556e-05,
+      "five_year_combo_cost_per_gb": 0.00043459457131242045,
+      "five_year_dedicated_bit_total": 66014044583.620575,
+      "five_year_dedicated_bit_total_gb": 8251755572.952572,
+      "five_year_dedicated_sale_bit_total": 65984281187.77199,
+      "five_year_dedicated_sale_bit_total_gb": 8248035148.4714985,
+      "five_year_dedicated_cost_total": 2720492.0,
+      "five_year_dedicated_cost_per_bit": 4.1210806233117994e-05,
+      "five_year_dedicated_cost_per_gb": 0.00032968644986494395,
+      "one_year_combo_bit_total": 5232651877.5334015,
+      "one_year_combo_bit_total_gb": 654081484.6916752,
+      "one_year_combo_sale_bit_total": 5224609751.763804,
+      "one_year_combo_sale_bit_total_gb": 653076218.9704756,
+      "one_year_combo_cost_total": 470454.0,
+      "one_year_combo_cost_per_bit": 8.990737603239247e-05,
+      "one_year_combo_cost_per_gb": 0.0007192590082591398,
+      "one_year_dedicated_bit_total": 8392250857.663765,
+      "one_year_dedicated_bit_total_gb": 1049031357.2079706,
+      "one_year_dedicated_sale_bit_total": 8377836816.711653,
+      "one_year_dedicated_sale_bit_total_gb": 1047229602.0889566,
+      "one_year_dedicated_cost_total": 544172.0,
+      "one_year_dedicated_cost_per_bit": 6.484219897967714e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005187375918374171
+    },
+    {
+      "qlc_ratio": 25,
+      "tlc_ratio": 75,
+      "wafer_qlc_dedicated": 21250.0,
+      "wafer_tlc_dedicated": 56250.0,
+      "wafer_qlc_combo": 20000.0,
+      "wafer_tlc_combo": 58500.0,
+      "combo_bit_total": 873912000.0,
+      "combo_cost_total": 39304.0,
+      "combo_cost_per_bit": 4.4974780069389136e-05,
+      "dedicated_bit_total": 1258608000.0,
+      "dedicated_cost_total": 45892.0,
+      "dedicated_cost_per_bit": 3.646250460826564e-05,
+      "combo_bit_total_gb": 109239000.0,
+      "dedicated_bit_total_gb": 157326000.0,
+      "combo_cost_per_gb": 0.0003597982405551131,
+      "dedicated_cost_per_gb": 0.0002917000368661251,
+      "five_year_combo_bit_total": 46129946195.27811,
+      "five_year_combo_bit_total_gb": 5766243274.409763,
+      "five_year_combo_sale_bit_total": 46114590586.73741,
+      "five_year_combo_sale_bit_total_gb": 5764323823.342176,
+      "five_year_combo_cost_total": 2355054.0,
+      "five_year_combo_cost_per_bit": 5.105260669567104e-05,
+      "five_year_combo_cost_per_gb": 0.00040842085356536834,
+      "five_year_dedicated_bit_total": 67740297072.2236,
+      "five_year_dedicated_bit_total_gb": 8467537134.02795,
+      "five_year_dedicated_sale_bit_total": 67710533676.375015,
+      "five_year_dedicated_sale_bit_total_gb": 8463816709.546877,
+      "five_year_dedicated_cost_total": 2748092.0,
+      "five_year_dedicated_cost_per_bit": 4.056805356300739e-05,
+      "five_year_dedicated_cost_per_gb": 0.00032454442850405913,
+      "one_year_combo_bit_total": 5693656859.6528845,
+      "one_year_combo_bit_total_gb": 711707107.4566106,
+      "one_year_combo_sale_bit_total": 5685614733.883287,
+      "one_year_combo_sale_bit_total_gb": 710701841.7354109,
+      "one_year_combo_cost_total": 471054.0,
+      "one_year_combo_cost_per_bit": 8.273312066591908e-05,
+      "one_year_combo_cost_per_gb": 0.0006618649653273526,
+      "one_year_dedicated_bit_total": 8611706338.98444,
+      "one_year_dedicated_bit_total_gb": 1076463292.373055,
+      "one_year_dedicated_sale_bit_total": 8597292298.032326,
+      "one_year_dedicated_sale_bit_total_gb": 1074661537.2540407,
+      "one_year_dedicated_cost_total": 549692.0,
+      "one_year_dedicated_cost_per_bit": 6.383078780933257e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005106463024746606
+    },
+    {
+      "qlc_ratio": 30,
+      "tlc_ratio": 70,
+      "wafer_qlc_dedicated": 25500.0,
+      "wafer_tlc_dedicated": 52500.0,
+      "wafer_qlc_combo": 24000.0,
+      "wafer_tlc_combo": 54600.0,
+      "combo_bit_total": 922147200.0,
+      "combo_cost_total": 39354.0,
+      "combo_cost_per_bit": 4.267648375443747e-05,
+      "dedicated_bit_total": 1290681600.0,
+      "dedicated_cost_total": 46352.0,
+      "dedicated_cost_per_bit": 3.5912807620407695e-05,
+      "combo_bit_total_gb": 115268400.0,
+      "dedicated_bit_total_gb": 161335200.0,
+      "combo_cost_per_gb": 0.00034141187003549977,
+      "dedicated_cost_per_gb": 0.00028730246096326156,
+      "five_year_combo_bit_total": 48963373653.157455,
+      "five_year_combo_bit_total_gb": 6120421706.644682,
+      "five_year_combo_sale_bit_total": 48948018044.61676,
+      "five_year_combo_sale_bit_total_gb": 6118502255.577095,
+      "five_year_combo_cost_total": 2358054.0,
+      "five_year_combo_cost_per_bit": 4.8159549150019373e-05,
+      "five_year_combo_cost_per_gb": 0.000385276393200155,
+      "five_year_dedicated_bit_total": 69466549560.82663,
+      "five_year_dedicated_bit_total_gb": 8683318695.103329,
+      "five_year_dedicated_sale_bit_total": 69436786164.97803,
+      "five_year_dedicated_sale_bit_total_gb": 8679598270.622253,
+      "five_year_dedicated_cost_total": 2775692.0,
+      "five_year_dedicated_cost_per_bit": 3.995724586219063e-05,
+      "five_year_dedicated_cost_per_gb": 0.00031965796689752504,
+      "one_year_combo_bit_total": 6154661841.7723675,
+      "one_year_combo_bit_total_gb": 769332730.2215459,
+      "one_year_combo_sale_bit_total": 6146619716.00277,
+      "one_year_combo_sale_bit_total_gb": 768327464.5003463,
+      "one_year_combo_cost_total": 471654.0,
+      "one_year_combo_cost_per_bit": 7.663361726859344e-05,
+      "one_year_combo_cost_per_gb": 0.0006130689381487475,
+      "one_year_dedicated_bit_total": 8831161820.305115,
+      "one_year_dedicated_bit_total_gb": 1103895227.5381393,
+      "one_year_dedicated_sale_bit_total": 8816747779.353,
+      "one_year_dedicated_sale_bit_total_gb": 1102093472.419125,
+      "one_year_dedicated_cost_total": 555212.0,
+      "one_year_dedicated_cost_per_bit": 6.286964402842496e-05,
+      "one_year_dedicated_cost_per_gb": 0.0005029571522273997
+    },
+    {
+      "qlc_ratio": 35,
+      "tlc_ratio": 65,
+      "wafer_qlc_dedicated": 29749.999999999996,
+      "wafer_tlc_dedicated": 48750.0,
+      "wafer_qlc_combo": 28000.0,
+      "wafer_tlc_combo": 50700.0,
+      "combo_bit_total": 970382400.0,
+      "combo_cost_total": 39404.0,
+      "combo_cost_per_bit": 4.060667217377397e-05,
+      "dedicated_bit_total": 1322755200.0,
+      "dedicated_cost_total": 46811.99999999999,
+      "dedicated_cost_per_bit": 3.5389768265511256e-05,
+      "combo_bit_total_gb": 121297800.0,
+      "dedicated_bit_total_gb": 165344400.0,
+      "combo_cost_per_gb": 0.00032485337739019174,
+      "dedicated_cost_per_gb": 0.00028311814612409005,
+      "five_year_combo_bit_total": 51796801111.0368,
+      "five_year_combo_bit_total_gb": 6474600138.8796,
+      "five_year_combo_sale_bit_total": 51781445502.4961,
+      "five_year_combo_sale_bit_total_gb": 6472680687.812013,
+      "five_year_combo_cost_total": 2361054.0,
+      "five_year_combo_cost_per_bit": 4.558300801122078e-05,
+      "five_year_combo_cost_per_gb": 0.00036466406408976627,
+      "five_year_dedicated_bit_total": 71192802049.42963,
+      "five_year_dedicated_bit_total_gb": 8899100256.178703,
+      "five_year_dedicated_sale_bit_total": 71163038653.58105,
+      "five_year_dedicated_sale_bit_total_gb": 8895379831.697632,
+      "five_year_dedicated_cost_total": 2803291.9999999995,
+      "five_year_dedicated_cost_per_bit": 3.9376059366980045e-05,
+      "five_year_dedicated_cost_per_gb": 0.00031500847493584036,
+      "one_year_combo_bit_total": 6615666823.8918495,
+      "one_year_combo_bit_total_gb": 826958352.9864812,
+      "one_year_combo_sale_bit_total": 6607624698.122252,
+      "one_year_combo_sale_bit_total_gb": 825953087.2652816,
+      "one_year_combo_cost_total": 472254.0,
+      "one_year_combo_cost_per_bit": 7.138418734971654e-05,
+      "one_year_combo_cost_per_gb": 0.0005710734987977324,
+      "one_year_dedicated_bit_total": 9050617301.625788,
+      "one_year_dedicated_bit_total_gb": 1131327162.7032235,
+      "one_year_dedicated_sale_bit_total": 9036203260.673676,
+      "one_year_dedicated_sale_bit_total_gb": 1129525407.5842094,
+      "one_year_dedicated_cost_total": 560731.9999999999,
+      "one_year_dedicated_cost_per_bit": 6.19551110507428e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004956408884059424
+    },
+    {
+      "qlc_ratio": 40,
+      "tlc_ratio": 60,
+      "wafer_qlc_dedicated": 34000.0,
+      "wafer_tlc_dedicated": 45000.0,
+      "wafer_qlc_combo": 32000.0,
+      "wafer_tlc_combo": 46800.0,
+      "combo_bit_total": 1018617600.0,
+      "combo_cost_total": 39454.0,
+      "combo_cost_per_bit": 3.87328866102451e-05,
+      "dedicated_bit_total": 1354828800.0,
+      "dedicated_cost_total": 47272.0,
+      "dedicated_cost_per_bit": 3.48914933015891e-05,
+      "combo_bit_total_gb": 127327200.0,
+      "dedicated_bit_total_gb": 169353600.0,
+      "combo_cost_per_gb": 0.0003098630928819608,
+      "dedicated_cost_per_gb": 0.0002791319464127128,
+      "five_year_combo_bit_total": 54630228568.916145,
+      "five_year_combo_bit_total_gb": 6828778571.114518,
+      "five_year_combo_sale_bit_total": 54614872960.37546,
+      "five_year_combo_sale_bit_total_gb": 6826859120.046932,
+      "five_year_combo_cost_total": 2364054.0,
+      "five_year_combo_cost_per_bit": 4.327373437615662e-05,
+      "five_year_combo_cost_per_gb": 0.00034618987500925294,
+      "five_year_dedicated_bit_total": 72919054538.03265,
+      "five_year_dedicated_bit_total_gb": 9114881817.254082,
+      "five_year_dedicated_sale_bit_total": 72889291142.18407,
+      "five_year_dedicated_sale_bit_total_gb": 9111161392.773008,
+      "five_year_dedicated_cost_total": 2830892.0,
+      "five_year_dedicated_cost_per_bit": 3.882239036058101e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003105791228846481,
+      "one_year_combo_bit_total": 7076671806.011333,
+      "one_year_combo_bit_total_gb": 884583975.7514167,
+      "one_year_combo_sale_bit_total": 7068629680.241736,
+      "one_year_combo_sale_bit_total_gb": 883578710.030217,
+      "one_year_combo_cost_total": 472854.0,
+      "one_year_combo_cost_per_bit": 6.68186985297708e-05,
+      "one_year_combo_cost_per_gb": 0.0005345495882381665,
+      "one_year_dedicated_bit_total": 9270072782.946463,
+      "one_year_dedicated_bit_total_gb": 1158759097.8683078,
+      "one_year_dedicated_sale_bit_total": 9255658741.99435,
+      "one_year_dedicated_sale_bit_total_gb": 1156957342.7492938,
+      "one_year_dedicated_cost_total": 566252.0,
+      "one_year_dedicated_cost_per_bit": 6.10838785475014e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004886710283800112
+    },
+    {
+      "qlc_ratio": 45,
+      "tlc_ratio": 55,
+      "wafer_qlc_dedicated": 38250.0,
+      "wafer_tlc_dedicated": 41250.0,
+      "wafer_qlc_combo": 36000.0,
+      "wafer_tlc_combo": 42900.0,
+      "combo_bit_total": 1066852800.0,
+      "combo_cost_total": 39504.0,
+      "combo_cost_per_bit": 3.702853852002826e-05,
+      "dedicated_bit_total": 1386902400.0,
+      "dedicated_cost_total": 47732.0,
+      "dedicated_cost_per_bit": 3.4416264619630045e-05,
+      "combo_bit_total_gb": 133356600.0,
+      "dedicated_bit_total_gb": 173362800.0,
+      "combo_cost_per_gb": 0.00029622830816022607,
+      "dedicated_cost_per_gb": 0.00027533011695704036,
+      "five_year_combo_bit_total": 57463656026.79549,
+      "five_year_combo_bit_total_gb": 7182957003.349436,
+      "five_year_combo_sale_bit_total": 57448300418.25479,
+      "five_year_combo_sale_bit_total_gb": 7181037552.281849,
+      "five_year_combo_cost_total": 2367054.0,
+      "five_year_combo_cost_per_bit": 4.119219283395813e-05,
+      "five_year_combo_cost_per_gb": 0.00032953754267166506,
+      "five_year_dedicated_bit_total": 74645307026.63568,
+      "five_year_dedicated_bit_total_gb": 9330663378.32946,
+      "five_year_dedicated_sale_bit_total": 74615543630.7871,
+      "five_year_dedicated_sale_bit_total_gb": 9326942953.848387,
+      "five_year_dedicated_cost_total": 2858492.0,
+      "five_year_dedicated_cost_per_bit": 3.8294329728994274e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003063546378319542,
+      "one_year_combo_bit_total": 7537676788.130816,
+      "one_year_combo_bit_total_gb": 942209598.516352,
+      "one_year_combo_sale_bit_total": 7529634662.361219,
+      "one_year_combo_sale_bit_total_gb": 941204332.7951524,
+      "one_year_combo_cost_total": 473454.0,
+      "one_year_combo_cost_per_bit": 6.281166111361038e-05,
+      "one_year_combo_cost_per_gb": 0.000502493288908883,
+      "one_year_dedicated_bit_total": 9489528264.267136,
+      "one_year_dedicated_bit_total_gb": 1186191033.033392,
+      "one_year_dedicated_sale_bit_total": 9475114223.315023,
+      "one_year_dedicated_sale_bit_total_gb": 1184389277.914378,
+      "one_year_dedicated_cost_total": 571772.0,
+      "one_year_dedicated_cost_per_bit": 6.0252942409477846e-05,
+      "one_year_dedicated_cost_per_gb": 0.00048202353927582277
+    },
+    {
+      "qlc_ratio": 50,
+      "tlc_ratio": 50,
+      "wafer_qlc_dedicated": 42500.0,
+      "wafer_tlc_dedicated": 37500.0,
+      "wafer_qlc_combo": 40000.0,
+      "wafer_tlc_combo": 39000.0,
+      "combo_bit_total": 1115088000.0,
+      "combo_cost_total": 39554.0,
+      "combo_cost_per_bit": 3.547163990644685e-05,
+      "dedicated_bit_total": 1418976000.0,
+      "dedicated_cost_total": 48192.0,
+      "dedicated_cost_per_bit": 3.39625194506461e-05,
+      "combo_bit_total_gb": 139386000.0,
+      "dedicated_bit_total_gb": 177372000.0,
+      "combo_cost_per_gb": 0.0002837731192515748,
+      "dedicated_cost_per_gb": 0.0002717001556051688,
+      "five_year_combo_bit_total": 60297083484.67483,
+      "five_year_combo_bit_total_gb": 7537135435.584353,
+      "five_year_combo_sale_bit_total": 60281727876.13414,
+      "five_year_combo_sale_bit_total_gb": 7535215984.5167675,
+      "five_year_combo_cost_total": 2370054.0,
+      "five_year_combo_cost_per_bit": 3.9306279226629184e-05,
+      "five_year_combo_cost_per_gb": 0.00031445023381303347,
+      "five_year_dedicated_bit_total": 76371559515.2387,
+      "five_year_dedicated_bit_total_gb": 9546444939.404837,
+      "five_year_dedicated_sale_bit_total": 76341796119.3901,
+      "five_year_dedicated_sale_bit_total_gb": 9542724514.923763,
+      "five_year_dedicated_cost_total": 2886092.0,
+      "five_year_dedicated_cost_per_bit": 3.779014096764814e-05,
+      "five_year_dedicated_cost_per_gb": 0.0003023211277411851,
+      "one_year_combo_bit_total": 7998681770.250299,
+      "one_year_combo_bit_total_gb": 999835221.2812874,
+      "one_year_combo_sale_bit_total": 7990639644.480702,
+      "one_year_combo_sale_bit_total_gb": 998829955.5600878,
+      "one_year_combo_cost_total": 474054.0,
+      "one_year_combo_cost_per_bit": 5.926651586054606e-05,
+      "one_year_combo_cost_per_gb": 0.00047413212688436846,
+      "one_year_dedicated_bit_total": 9708983745.58781,
+      "one_year_dedicated_bit_total_gb": 1213622968.1984763,
+      "one_year_dedicated_sale_bit_total": 9694569704.635698,
+      "one_year_dedicated_sale_bit_total_gb": 1211821213.0794623,
+      "one_year_dedicated_cost_total": 577292.0,
+      "one_year_dedicated_cost_per_bit": 5.9459570139083495e-05,
+      "one_year_dedicated_cost_per_gb": 0.00047567656111266796
+    },
+    {
+      "qlc_ratio": 55,
+      "tlc_ratio": 45,
+      "wafer_qlc_dedicated": 46750.00000000001,
+      "wafer_tlc_dedicated": 33750.0,
+      "wafer_qlc_combo": 44000.0,
+      "wafer_tlc_combo": 35100.0,
+      "combo_bit_total": 1163323200.0,
+      "combo_cost_total": 39604.0,
+      "combo_cost_per_bit": 3.404384955101042e-05,
+      "dedicated_bit_total": 1451049600.0,
+      "dedicated_cost_total": 48652.0,
+      "dedicated_cost_per_bit": 3.352883319770737e-05,
+      "combo_bit_total_gb": 145415400.0,
+      "dedicated_bit_total_gb": 181381200.0,
+      "combo_cost_per_gb": 0.00027235079640808334,
+      "dedicated_cost_per_gb": 0.00026823066558165896,
+      "five_year_combo_bit_total": 63130510942.55418,
+      "five_year_combo_bit_total_gb": 7891313867.819272,
+      "five_year_combo_sale_bit_total": 63115155334.01349,
+      "five_year_combo_sale_bit_total_gb": 7889394416.751686,
+      "five_year_combo_cost_total": 2373054.0,
+      "five_year_combo_cost_per_bit": 3.758965299931389e-05,
+      "five_year_combo_cost_per_gb": 0.00030071722399451113,
+      "five_year_dedicated_bit_total": 78097812003.84172,
+      "five_year_dedicated_bit_total_gb": 9762226500.480215,
+      "five_year_dedicated_sale_bit_total": 78068048607.99313,
+      "five_year_dedicated_sale_bit_total_gb": 9758506075.999142,
+      "five_year_dedicated_cost_total": 2913692.0,
+      "five_year_dedicated_cost_per_bit": 3.730824110484263e-05,
+      "five_year_dedicated_cost_per_gb": 0.00029846592883874104,
+      "one_year_combo_bit_total": 8459686752.369782,
+      "one_year_combo_bit_total_gb": 1057460844.0462228,
+      "one_year_combo_sale_bit_total": 8451644626.600185,
+      "one_year_combo_sale_bit_total_gb": 1056455578.3250232,
+      "one_year_combo_cost_total": 474654.0,
+      "one_year_combo_cost_per_bit": 5.6107751255333045e-05,
+      "one_year_combo_cost_per_gb": 0.00044886201004266436,
+      "one_year_dedicated_bit_total": 9928439226.908485,
+      "one_year_dedicated_bit_total_gb": 1241054903.3635607,
+      "one_year_dedicated_sale_bit_total": 9914025185.956373,
+      "one_year_dedicated_sale_bit_total_gb": 1239253148.2445467,
+      "one_year_dedicated_cost_total": 582812.0,
+      "one_year_dedicated_cost_per_bit": 5.870127083222081e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004696101666577665
+    },
+    {
+      "qlc_ratio": 60,
+      "tlc_ratio": 40,
+      "wafer_qlc_dedicated": 51000.0,
+      "wafer_tlc_dedicated": 30000.0,
+      "wafer_qlc_combo": 48000.0,
+      "wafer_tlc_combo": 31200.0,
+      "combo_bit_total": 1211558400.0,
+      "combo_cost_total": 39654.0,
+      "combo_cost_per_bit": 3.2729747076162405e-05,
+      "dedicated_bit_total": 1483123200.0,
+      "dedicated_cost_total": 49112.0,
+      "dedicated_cost_per_bit": 3.3113904495594165e-05,
+      "combo_bit_total_gb": 151444800.0,
+      "dedicated_bit_total_gb": 185390400.0,
+      "combo_cost_per_gb": 0.00026183797660929924,
+      "dedicated_cost_per_gb": 0.0002649112359647533,
+      "five_year_combo_bit_total": 65963938400.43352,
+      "five_year_combo_bit_total_gb": 8245492300.05419,
+      "five_year_combo_sale_bit_total": 65948582791.89282,
+      "five_year_combo_sale_bit_total_gb": 8243572848.986603,
+      "five_year_combo_cost_total": 2376054.0,
+      "five_year_combo_cost_per_bit": 3.6020499345812025e-05,
+      "five_year_combo_cost_per_gb": 0.0002881639947664962,
+      "five_year_dedicated_bit_total": 79824064492.44473,
+      "five_year_dedicated_bit_total_gb": 9978008061.555592,
+      "five_year_dedicated_sale_bit_total": 79794301096.59616,
+      "five_year_dedicated_sale_bit_total_gb": 9974287637.07452,
+      "five_year_dedicated_cost_total": 2941292.0,
+      "five_year_dedicated_cost_per_bit": 3.684718410045871e-05,
+      "five_year_dedicated_cost_per_gb": 0.00029477747280366967,
+      "one_year_combo_bit_total": 8920691734.489265,
+      "one_year_combo_bit_total_gb": 1115086466.8111582,
+      "one_year_combo_sale_bit_total": 8912649608.71967,
+      "one_year_combo_sale_bit_total_gb": 1114081201.0899587,
+      "one_year_combo_cost_total": 475254.0,
+      "one_year_combo_cost_per_bit": 5.327546496899656e-05,
+      "one_year_combo_cost_per_gb": 0.0004262037197519725,
+      "one_year_dedicated_bit_total": 10147894708.22916,
+      "one_year_dedicated_bit_total_gb": 1268486838.528645,
+      "one_year_dedicated_sale_bit_total": 10133480667.277046,
+      "one_year_dedicated_sale_bit_total_gb": 1266685083.4096308,
+      "one_year_dedicated_cost_total": 588332.0,
+      "one_year_dedicated_cost_per_bit": 5.797576905512314e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004638061524409851
+    },
+    {
+      "qlc_ratio": 65,
+      "tlc_ratio": 35,
+      "wafer_qlc_dedicated": 55250.0,
+      "wafer_tlc_dedicated": 26250.0,
+      "wafer_qlc_combo": 52000.0,
+      "wafer_tlc_combo": 27300.0,
+      "combo_bit_total": 1259793600.0,
+      "combo_cost_total": 39704.0,
+      "combo_cost_per_bit": 3.151627377691076e-05,
+      "dedicated_bit_total": 1515196799.9999998,
+      "dedicated_cost_total": 49572.0,
+      "dedicated_cost_per_bit": 3.2716542167987686e-05,
+      "combo_bit_total_gb": 157474200.0,
+      "dedicated_bit_total_gb": 189399599.99999997,
+      "combo_cost_per_gb": 0.00025213019021528605,
+      "dedicated_cost_per_gb": 0.0002617323373439015,
+      "five_year_combo_bit_total": 68797365858.31287,
+      "five_year_combo_bit_total_gb": 8599670732.289108,
+      "five_year_combo_sale_bit_total": 68782010249.77217,
+      "five_year_combo_sale_bit_total_gb": 8597751281.221521,
+      "five_year_combo_cost_total": 2379054.0,
+      "five_year_combo_cost_per_bit": 3.4580597241173825e-05,
+      "five_year_combo_cost_per_gb": 0.0002766447779293906,
+      "five_year_dedicated_bit_total": 81550316981.04776,
+      "five_year_dedicated_bit_total_gb": 10193789622.63097,
+      "five_year_dedicated_sale_bit_total": 81520553585.19917,
+      "five_year_dedicated_sale_bit_total_gb": 10190069198.149897,
+      "five_year_dedicated_cost_total": 2968892.0,
+      "five_year_dedicated_cost_per_bit": 3.640564635315849e-05,
+      "five_year_dedicated_cost_per_gb": 0.0002912451708252679,
+      "one_year_combo_bit_total": 9381696716.60875,
+      "one_year_combo_bit_total_gb": 1172712089.5760937,
+      "one_year_combo_sale_bit_total": 9373654590.839151,
+      "one_year_combo_sale_bit_total_gb": 1171706823.854894,
+      "one_year_combo_cost_total": 475854.0,
+      "one_year_combo_cost_per_bit": 5.072152877821971e-05,
+      "one_year_combo_cost_per_gb": 0.00040577223022575766,
+      "one_year_dedicated_bit_total": 10367350189.549835,
+      "one_year_dedicated_bit_total_gb": 1295918773.6937294,
+      "one_year_dedicated_sale_bit_total": 10352936148.597721,
+      "one_year_dedicated_sale_bit_total_gb": 1294117018.5747151,
+      "one_year_dedicated_cost_total": 593852.0,
+      "one_year_dedicated_cost_per_bit": 5.728098203903595e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004582478563122876
+    },
+    {
+      "qlc_ratio": 70,
+      "tlc_ratio": 30,
+      "wafer_qlc_dedicated": 59499.99999999999,
+      "wafer_tlc_dedicated": 22500.0,
+      "wafer_qlc_combo": 56000.0,
+      "wafer_tlc_combo": 23400.0,
+      "combo_bit_total": 1308028800.0,
+      "combo_cost_total": 39754.0,
+      "combo_cost_per_bit": 3.039229717266164e-05,
+      "dedicated_bit_total": 1547270399.9999998,
+      "dedicated_cost_total": 50031.99999999999,
+      "dedicated_cost_per_bit": 3.233565380685884e-05,
+      "combo_bit_total_gb": 163503600.0,
+      "dedicated_bit_total_gb": 193408799.99999997,
+      "combo_cost_per_gb": 0.00024313837738129313,
+      "dedicated_cost_per_gb": 0.0002586852304548707,
+      "five_year_combo_bit_total": 71630793316.1922,
+      "five_year_combo_bit_total_gb": 8953849164.524025,
+      "five_year_combo_sale_bit_total": 71615437707.6515,
+      "five_year_combo_sale_bit_total_gb": 8951929713.456438,
+      "five_year_combo_cost_total": 2382054.0,
+      "five_year_combo_cost_per_bit": 3.3254608663695126e-05,
+      "five_year_combo_cost_per_gb": 0.000266036869309561,
+      "five_year_dedicated_bit_total": 83276569469.65076,
+      "five_year_dedicated_bit_total_gb": 10409571183.706345,
+      "five_year_dedicated_sale_bit_total": 83246806073.80219,
+      "five_year_dedicated_sale_bit_total_gb": 10405850759.225273,
+      "five_year_dedicated_cost_total": 2996491.9999999995,
+      "five_year_dedicated_cost_per_bit": 3.5982414010126084e-05,
+      "five_year_dedicated_cost_per_gb": 0.00028785931208100867,
+      "one_year_combo_bit_total": 9842701698.728231,
+      "one_year_combo_bit_total_gb": 1230337712.341029,
+      "one_year_combo_sale_bit_total": 9834659572.958633,
+      "one_year_combo_sale_bit_total_gb": 1229332446.6198292,
+      "one_year_combo_cost_total": 476454.0,
+      "one_year_combo_cost_per_bit": 4.8406831232278664e-05,
+      "one_year_combo_cost_per_gb": 0.0003872546498582293,
+      "one_year_dedicated_bit_total": 10586805670.870508,
+      "one_year_dedicated_bit_total_gb": 1323350708.8588135,
+      "one_year_dedicated_sale_bit_total": 10572391629.918396,
+      "one_year_dedicated_sale_bit_total_gb": 1321548953.7397995,
+      "one_year_dedicated_cost_total": 599371.9999999999,
+      "one_year_dedicated_cost_per_bit": 5.661499971130726e-05,
+      "one_year_dedicated_cost_per_gb": 0.00045291999769045806
+    },
+    {
+      "qlc_ratio": 75,
+      "tlc_ratio": 25,
+      "wafer_qlc_dedicated": 63750.0,
+      "wafer_tlc_dedicated": 18750.0,
+      "wafer_qlc_combo": 60000.0,
+      "wafer_tlc_combo": 19500.0,
+      "combo_bit_total": 1356264000.0,
+      "combo_cost_total": 39804.0,
+      "combo_cost_per_bit": 2.9348268478703263e-05,
+      "dedicated_bit_total": 1579343999.9999998,
+      "dedicated_cost_total": 50492.0,
+      "dedicated_cost_per_bit": 3.1970235743447916e-05,
+      "combo_bit_total_gb": 169533000.0,
+      "dedicated_bit_total_gb": 197417999.99999997,
+      "combo_cost_per_gb": 0.0002347861478296261,
+      "dedicated_cost_per_gb": 0.00025576188594758333,
+      "five_year_combo_bit_total": 74464220774.07155,
+      "five_year_combo_bit_total_gb": 9308027596.758944,
+      "five_year_combo_sale_bit_total": 74448865165.53085,
+      "five_year_combo_sale_bit_total_gb": 9306108145.691357,
+      "five_year_combo_cost_total": 2385054.0,
+      "five_year_combo_cost_per_bit": 3.2029530091188116e-05,
+      "five_year_combo_cost_per_gb": 0.0002562362407295049,
+      "five_year_dedicated_bit_total": 85002821958.25378,
+      "five_year_dedicated_bit_total_gb": 10625352744.781723,
+      "five_year_dedicated_sale_bit_total": 84973058562.4052,
+      "five_year_dedicated_sale_bit_total_gb": 10621632320.30065,
+      "five_year_dedicated_cost_total": 3024092.0,
+      "five_year_dedicated_cost_per_bit": 3.5576371823104634e-05,
+      "five_year_dedicated_cost_per_gb": 0.00028461097458483707,
+      "one_year_combo_bit_total": 10303706680.847715,
+      "one_year_combo_bit_total_gb": 1287963335.1059644,
+      "one_year_combo_sale_bit_total": 10295664555.07812,
+      "one_year_combo_sale_bit_total_gb": 1286958069.384765,
+      "one_year_combo_cost_total": 477054.0,
+      "one_year_combo_cost_per_bit": 4.629926052599465e-05,
+      "one_year_combo_cost_per_gb": 0.0003703940842079572,
+      "one_year_dedicated_bit_total": 10806261152.191181,
+      "one_year_dedicated_bit_total_gb": 1350782644.0238976,
+      "one_year_dedicated_sale_bit_total": 10791847111.239069,
+      "one_year_dedicated_sale_bit_total_gb": 1348980888.9048836,
+      "one_year_dedicated_cost_total": 604892.0,
+      "one_year_dedicated_cost_per_bit": 5.597606715967125e-05,
+      "one_year_dedicated_cost_per_gb": 0.00044780853727737
+    },
+    {
+      "qlc_ratio": 80,
+      "tlc_ratio": 20,
+      "wafer_qlc_dedicated": 68000.0,
+      "wafer_tlc_dedicated": 15000.0,
+      "wafer_qlc_combo": 64000.0,
+      "wafer_tlc_combo": 15600.0,
+      "combo_bit_total": 1404499200.0,
+      "combo_cost_total": 39854.0,
+      "combo_cost_per_bit": 2.8375950659138858e-05,
+      "dedicated_bit_total": 1611417599.9999998,
+      "dedicated_cost_total": 50952.0,
+      "dedicated_cost_per_bit": 3.1619364216947864e-05,
+      "combo_bit_total_gb": 175562400.0,
+      "dedicated_bit_total_gb": 201427199.99999997,
+      "combo_cost_per_gb": 0.00022700760527311086,
+      "dedicated_cost_per_gb": 0.0002529549137355829,
+      "five_year_combo_bit_total": 77297648231.9509,
+      "five_year_combo_bit_total_gb": 9662206028.993862,
+      "five_year_combo_sale_bit_total": 77282292623.41019,
+      "five_year_combo_sale_bit_total_gb": 9660286577.926273,
+      "five_year_combo_cost_total": 2388054.0,
+      "five_year_combo_cost_per_bit": 3.089426463317548e-05,
+      "five_year_combo_cost_per_gb": 0.00024715411706540384,
+      "five_year_dedicated_bit_total": 86729074446.85681,
+      "five_year_dedicated_bit_total_gb": 10841134305.857101,
+      "five_year_dedicated_sale_bit_total": 86699311051.00821,
+      "five_year_dedicated_sale_bit_total_gb": 10837413881.376026,
+      "five_year_dedicated_cost_total": 3051692.0,
+      "five_year_dedicated_cost_per_bit": 3.5186493335287726e-05,
+      "five_year_dedicated_cost_per_gb": 0.0002814919466823018,
+      "one_year_combo_bit_total": 10764711662.9672,
+      "one_year_combo_bit_total_gb": 1345588957.8709,
+      "one_year_combo_sale_bit_total": 10756669537.197601,
+      "one_year_combo_sale_bit_total_gb": 1344583692.1497002,
+      "one_year_combo_cost_total": 477654.0,
+      "one_year_combo_cost_per_bit": 4.4372205680457476e-05,
+      "one_year_combo_cost_per_gb": 0.0003549776454436598,
+      "one_year_dedicated_bit_total": 11025716633.511856,
+      "one_year_dedicated_bit_total_gb": 1378214579.188982,
+      "one_year_dedicated_sale_bit_total": 11011302592.559744,
+      "one_year_dedicated_sale_bit_total_gb": 1376412824.069968,
+      "one_year_dedicated_cost_total": 610412.0,
+      "one_year_dedicated_cost_per_bit": 5.5362569190713425e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004429005535257074
+    },
+    {
+      "qlc_ratio": 85,
+      "tlc_ratio": 15,
+      "wafer_qlc_dedicated": 72250.0,
+      "wafer_tlc_dedicated": 11250.0,
+      "wafer_qlc_combo": 68000.0,
+      "wafer_tlc_combo": 11700.0,
+      "combo_bit_total": 1452734400.0,
+      "combo_cost_total": 39904.0,
+      "combo_cost_per_bit": 2.746820065663758e-05,
+      "dedicated_bit_total": 1643491199.9999998,
+      "dedicated_cost_total": 51412.0,
+      "dedicated_cost_per_bit": 3.128218757727453e-05,
+      "combo_bit_total_gb": 181591800.0,
+      "dedicated_bit_total_gb": 205436399.99999997,
+      "combo_cost_per_gb": 0.00021974560525310063,
+      "dedicated_cost_per_gb": 0.00025025750061819624,
+      "five_year_combo_bit_total": 80131075689.83023,
+      "five_year_combo_bit_total_gb": 10016384461.228779,
+      "five_year_combo_sale_bit_total": 80115720081.28954,
+      "five_year_combo_sale_bit_total_gb": 10014465010.161192,
+      "five_year_combo_cost_total": 2391054.0,
+      "five_year_combo_cost_per_bit": 2.9839284939281785e-05,
+      "five_year_combo_cost_per_gb": 0.00023871427951425428,
+      "five_year_dedicated_bit_total": 88455326935.45982,
+      "five_year_dedicated_bit_total_gb": 11056915866.932478,
+      "five_year_dedicated_sale_bit_total": 88425563539.61124,
+      "five_year_dedicated_sale_bit_total_gb": 11053195442.451405,
+      "five_year_dedicated_cost_total": 3079292.0,
+      "five_year_dedicated_cost_per_bit": 3.481183221725879e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027849465773807034,
+      "one_year_combo_bit_total": 11225716645.086681,
+      "one_year_combo_bit_total_gb": 1403214580.6358352,
+      "one_year_combo_sale_bit_total": 11217674519.317083,
+      "one_year_combo_sale_bit_total_gb": 1402209314.9146354,
+      "one_year_combo_cost_total": 478254.0,
+      "one_year_combo_cost_per_bit": 4.2603427034595976e-05,
+      "one_year_combo_cost_per_gb": 0.0003408274162767678,
+      "one_year_dedicated_bit_total": 11245172114.832531,
+      "one_year_dedicated_bit_total_gb": 1405646514.3540664,
+      "one_year_dedicated_sale_bit_total": 11230758073.880419,
+      "one_year_dedicated_sale_bit_total_gb": 1403844759.2350523,
+      "one_year_dedicated_cost_total": 615932.0,
+      "one_year_dedicated_cost_per_bit": 5.4773016696434334e-05,
+      "one_year_dedicated_cost_per_gb": 0.00043818413357147467
+    },
+    {
+      "qlc_ratio": 90,
+      "tlc_ratio": 10,
+      "wafer_qlc_dedicated": 76500.0,
+      "wafer_tlc_dedicated": 7500.0,
+      "wafer_qlc_combo": 72000.0,
+      "wafer_tlc_combo": 7800.0,
+      "combo_bit_total": 1500969600.0,
+      "combo_cost_total": 39954.0,
+      "combo_cost_per_bit": 2.6618793611809327e-05,
+      "dedicated_bit_total": 1675564799.9999998,
+      "dedicated_cost_total": 51872.0,
+      "dedicated_cost_per_bit": 3.095791938336256e-05,
+      "combo_bit_total_gb": 187621200.0,
+      "dedicated_bit_total_gb": 209445599.99999997,
+      "combo_cost_per_gb": 0.00021295034889447462,
+      "dedicated_cost_per_gb": 0.0002476633550669005,
+      "five_year_combo_bit_total": 82964503147.70956,
+      "five_year_combo_bit_total_gb": 10370562893.463696,
+      "five_year_combo_sale_bit_total": 82949147539.16887,
+      "five_year_combo_sale_bit_total_gb": 10368643442.396109,
+      "five_year_combo_cost_total": 2394054.0,
+      "five_year_combo_cost_per_bit": 2.8856365182319466e-05,
+      "five_year_combo_cost_per_gb": 0.00023085092145855573,
+      "five_year_dedicated_bit_total": 90181579424.06285,
+      "five_year_dedicated_bit_total_gb": 11272697428.007856,
+      "five_year_dedicated_sale_bit_total": 90151816028.21426,
+      "five_year_dedicated_sale_bit_total_gb": 11268977003.526783,
+      "five_year_dedicated_cost_total": 3106892.0,
+      "five_year_dedicated_cost_per_bit": 3.445151459801333e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027561211678410664,
+      "one_year_combo_bit_total": 11686721627.206163,
+      "one_year_combo_bit_total_gb": 1460840203.4007704,
+      "one_year_combo_sale_bit_total": 11678679501.436567,
+      "one_year_combo_sale_bit_total_gb": 1459834937.679571,
+      "one_year_combo_cost_total": 478854.0,
+      "one_year_combo_cost_per_bit": 4.097419407040974e-05,
+      "one_year_combo_cost_per_gb": 0.0003277935525632779,
+      "one_year_dedicated_bit_total": 11464627596.153206,
+      "one_year_dedicated_bit_total_gb": 1433078449.5191507,
+      "one_year_dedicated_sale_bit_total": 11450213555.201092,
+      "one_year_dedicated_sale_bit_total_gb": 1431276694.4001365,
+      "one_year_dedicated_cost_total": 621452.0,
+      "one_year_dedicated_cost_per_bit": 5.420603458663755e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004336482766931004
+    },
+    {
+      "qlc_ratio": 95,
+      "tlc_ratio": 5,
+      "wafer_qlc_dedicated": 80750.0,
+      "wafer_tlc_dedicated": 3750.0,
+      "wafer_qlc_combo": 76000.0,
+      "wafer_tlc_combo": 3900.0,
+      "combo_bit_total": 1549204800.0,
+      "combo_cost_total": 40004.0,
+      "combo_cost_per_bit": 2.5822279920640576e-05,
+      "dedicated_bit_total": 1707638399.9999998,
+      "dedicated_cost_total": 52332.0,
+      "dedicated_cost_per_bit": 3.064583227924601e-05,
+      "combo_bit_total_gb": 193650600.0,
+      "dedicated_bit_total_gb": 213454799.99999997,
+      "combo_cost_per_gb": 0.0002065782393651246,
+      "dedicated_cost_per_gb": 0.0002451666582339681,
+      "five_year_combo_bit_total": 85797930605.58891,
+      "five_year_combo_bit_total_gb": 10724741325.698614,
+      "five_year_combo_sale_bit_total": 85782574997.04822,
+      "five_year_combo_sale_bit_total_gb": 10722821874.631027,
+      "five_year_combo_cost_total": 2397054.0,
+      "five_year_combo_cost_per_bit": 2.7938366148004215e-05,
+      "five_year_combo_cost_per_gb": 0.00022350692918403372,
+      "five_year_dedicated_bit_total": 91907831912.66586,
+      "five_year_dedicated_bit_total_gb": 11488478989.083233,
+      "five_year_dedicated_sale_bit_total": 91878068516.81728,
+      "five_year_dedicated_sale_bit_total_gb": 11484758564.60216,
+      "five_year_dedicated_cost_total": 3134492.0,
+      "five_year_dedicated_cost_per_bit": 3.4104732260233356e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027283785808186685,
+      "one_year_combo_bit_total": 12147726609.325647,
+      "one_year_combo_bit_total_gb": 1518465826.165706,
+      "one_year_combo_sale_bit_total": 12139684483.55605,
+      "one_year_combo_sale_bit_total_gb": 1517460560.4445062,
+      "one_year_combo_cost_total": 479454.0,
+      "one_year_combo_cost_per_bit": 3.94686195548663e-05,
+      "one_year_combo_cost_per_gb": 0.0003157489564389304,
+      "one_year_dedicated_bit_total": 11684083077.473879,
+      "one_year_dedicated_bit_total_gb": 1460510384.6842349,
+      "one_year_dedicated_sale_bit_total": 11669669036.521767,
+      "one_year_dedicated_sale_bit_total_gb": 1458708629.5652208,
+      "one_year_dedicated_cost_total": 626972.0,
+      "one_year_dedicated_cost_per_bit": 5.3660351081272227e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004292828086501778
+    },
+    {
+      "qlc_ratio": 100,
+      "tlc_ratio": 0,
+      "wafer_qlc_dedicated": 85000.0,
+      "wafer_tlc_dedicated": 0.0,
+      "wafer_qlc_combo": 80000.0,
+      "wafer_tlc_combo": 0.0,
+      "combo_bit_total": 1597440000.0,
+      "combo_cost_total": 40054.0,
+      "combo_cost_per_bit": 2.5073868189102565e-05,
+      "dedicated_bit_total": 1739711999.9999998,
+      "dedicated_cost_total": 52792.0,
+      "dedicated_cost_per_bit": 3.0345252547548105e-05,
+      "combo_bit_total_gb": 199680000.0,
+      "dedicated_bit_total_gb": 217463999.99999997,
+      "combo_cost_per_gb": 0.00020059094551282052,
+      "dedicated_cost_per_gb": 0.00024276202038038484,
+      "five_year_combo_bit_total": 88631358063.46826,
+      "five_year_combo_bit_total_gb": 11078919757.933533,
+      "five_year_combo_sale_bit_total": 88622805197.6054,
+      "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+      "five_year_combo_cost_total": 2400054.0,
+      "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+      "five_year_combo_cost_per_gb": 0.00021663249237646468,
+      "five_year_dedicated_bit_total": 93634084401.26889,
+      "five_year_dedicated_bit_total_gb": 11704260550.158611,
+      "five_year_dedicated_sale_bit_total": 93616734175.25288,
+      "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+      "five_year_dedicated_cost_total": 3162092.0,
+      "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+      "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+      "one_year_combo_bit_total": 12608731591.445131,
+      "one_year_combo_bit_total_gb": 1576091448.9306414,
+      "one_year_combo_sale_bit_total": 12602427225.649408,
+      "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+      "one_year_combo_cost_total": 480054.0,
+      "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+      "one_year_combo_cost_per_gb": 0.00030458511803087995,
+      "one_year_dedicated_bit_total": 11903538558.794554,
+      "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+      "one_year_dedicated_sale_bit_total": 11895136060.988346,
+      "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+      "one_year_dedicated_cost_total": 632492.0,
+      "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+      "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+    }
+  ],
+  "crossover": {
+    "exists": true,
+    "qlc_ratio": 60,
+    "tlc_ratio": 40,
+    "combo_cost_per_bit": 3.2729747076162405e-05,
+    "dedicated_cost_per_bit": 3.3113904495594165e-05
+  },
+  "dev_cost": {
+    "combo": 54.0,
+    "dedicated": 92.0
+  },
+  "full_buildout": {
+    "combo": 40054.0,
+    "dedicated": 96292.0,
+    "combo_representative_capa_field": "combo_qlc_max_capa",
+    "combo_assumption": "combo's full max-capa buildout uses combo_qlc_max_capa as the representative capacity (not combo_tlc_max_capa, and not the larger of the two): combo is one physical line built around the QLC die design (combo_capex_per_wafer/combo_gross_die are already shared across both recipes), so its buildout size is set by the QLC recipe's max throughput -- the TLC-recipe max capa is a derived operating mode of that same physical investment, not a separate buildout to size for."
+  },
+  "yield_ramp_curves": {
+    "qlc_dedicated": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 11.42194593314526
+      },
+      {
+        "month": 2,
+        "yield_pct": 21.252905904099133
+      },
+      {
+        "month": 3,
+        "yield_pct": 29.714491567014583
+      },
+      {
+        "month": 4,
+        "yield_pct": 36.99744584028982
+      },
+      {
+        "month": 5,
+        "yield_pct": 43.26594267523679
+      },
+      {
+        "month": 6,
+        "yield_pct": 48.66128790127086
+      },
+      {
+        "month": 7,
+        "yield_pct": 53.30510457288526
+      },
+      {
+        "month": 8,
+        "yield_pct": 57.30207462319942
+      },
+      {
+        "month": 9,
+        "yield_pct": 60.74229862703688
+      },
+      {
+        "month": 10,
+        "yield_pct": 63.70332686782876
+      },
+      {
+        "month": 11,
+        "yield_pct": 66.25190749309816
+      },
+      {
+        "month": 12,
+        "yield_pct": 68.44549116582989
+      },
+      {
+        "month": 13,
+        "yield_pct": 70.33352612990588
+      },
+      {
+        "month": 14,
+        "yield_pct": 71.95857288325548
+      },
+      {
+        "month": 15,
+        "yield_pct": 73.35726358592713
+      },
+      {
+        "month": 16,
+        "yield_pct": 74.56112783026818
+      },
+      {
+        "month": 17,
+        "yield_pct": 75.59730338790544
+      },
+      {
+        "month": 18,
+        "yield_pct": 76.48914795534051
+      },
+      {
+        "month": 19,
+        "yield_pct": 77.25676568826324
+      },
+      {
+        "month": 20,
+        "yield_pct": 77.91746039383514
+      },
+      {
+        "month": 21,
+        "yield_pct": 78.4861255969027
+      },
+      {
+        "month": 22,
+        "yield_pct": 78.97558027309832
+      },
+      {
+        "month": 23,
+        "yield_pct": 79.39685781699842
+      },
+      {
+        "month": 24,
+        "yield_pct": 79.75945475932201
+      },
+      {
+        "month": 25,
+        "yield_pct": 80.07154483980725
+      },
+      {
+        "month": 26,
+        "yield_pct": 80.34016326144405
+      },
+      {
+        "month": 27,
+        "yield_pct": 80.57136527956153
+      },
+      {
+        "month": 28,
+        "yield_pct": 80.77036270072082
+      },
+      {
+        "month": 29,
+        "yield_pct": 80.94164136840064
+      },
+      {
+        "month": 30,
+        "yield_pct": 81.08906228386414
+      },
+      {
+        "month": 31,
+        "yield_pct": 81.21594864169542
+      },
+      {
+        "month": 32,
+        "yield_pct": 81.32516074198035
+      },
+      {
+        "month": 33,
+        "yield_pct": 81.41916046781772
+      },
+      {
+        "month": 34,
+        "yield_pct": 81.50006678162771
+      },
+      {
+        "month": 35,
+        "yield_pct": 81.56970349126712
+      },
+      {
+        "month": 36,
+        "yield_pct": 81.62964036270576
+      }
+    ],
+    "qlc_combo": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 14.501539753761456
+      },
+      {
+        "month": 2,
+        "yield_pct": 26.374396317148857
+      },
+      {
+        "month": 3,
+        "yield_pct": 36.09506911247789
+      },
+      {
+        "month": 4,
+        "yield_pct": 44.05368287062228
+      },
+      {
+        "month": 5,
+        "yield_pct": 50.56964470628461
+      },
+      {
+        "month": 6,
+        "yield_pct": 55.904463047023846
+      },
+      {
+        "month": 7,
+        "yield_pct": 60.27224288467149
+      },
+      {
+        "month": 8,
+        "yield_pct": 63.84827856042757
+      },
+      {
+        "month": 9,
+        "yield_pct": 66.77608894227308
+      },
+      {
+        "month": 10,
+        "yield_pct": 69.173177341071
+      },
+      {
+        "month": 11,
+        "yield_pct": 71.13574733101329
+      },
+      {
+        "month": 12,
+        "yield_pct": 72.742563736847
+      },
+      {
+        "month": 13,
+        "yield_pct": 74.0581137428533
+      },
+      {
+        "month": 14,
+        "yield_pct": 75.13519498998257
+      },
+      {
+        "month": 15,
+        "yield_pct": 76.0170345305709
+      },
+      {
+        "month": 16,
+        "yield_pct": 76.73902368173071
+      },
+      {
+        "month": 17,
+        "yield_pct": 77.33013840317392
+      },
+      {
+        "month": 18,
+        "yield_pct": 77.81410220421661
+      },
+      {
+        "month": 19,
+        "yield_pct": 78.21033825150676
+      },
+      {
+        "month": 20,
+        "yield_pct": 78.53474888890126
+      },
+      {
+        "month": 21,
+        "yield_pct": 78.80035385436179
+      },
+      {
+        "month": 22,
+        "yield_pct": 79.01781280775452
+      },
+      {
+        "month": 23,
+        "yield_pct": 79.19585314042932
+      },
+      {
+        "month": 24,
+        "yield_pct": 79.3416202360784
+      },
+      {
+        "month": 25,
+        "yield_pct": 79.46096424007317
+      },
+      {
+        "month": 26,
+        "yield_pct": 79.55867484633914
+      },
+      {
+        "month": 27,
+        "yield_pct": 79.638673524591
+      },
+      {
+        "month": 28,
+        "yield_pct": 79.70417090268137
+      },
+      {
+        "month": 29,
+        "yield_pct": 79.75779562036993
+      },
+      {
+        "month": 30,
+        "yield_pct": 79.80169982586669
+      },
+      {
+        "month": 31,
+        "yield_pct": 79.83764554909635
+      },
+      {
+        "month": 32,
+        "yield_pct": 79.86707541814609
+      },
+      {
+        "month": 33,
+        "yield_pct": 79.89117055699617
+      },
+      {
+        "month": 34,
+        "yield_pct": 79.91089798817241
+      },
+      {
+        "month": 35,
+        "yield_pct": 79.92704944275565
+      },
+      {
+        "month": 36,
+        "yield_pct": 79.94027313532986
+      }
+    ],
+    "tlc_dedicated": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 12.257698074594913
+      },
+      {
+        "month": 2,
+        "yield_pct": 22.807996580008826
+      },
+      {
+        "month": 3,
+        "yield_pct": 31.888722657283946
+      },
+      {
+        "month": 4,
+        "yield_pct": 39.70457602372567
+      },
+      {
+        "month": 5,
+        "yield_pct": 46.431743358790705
+      },
+      {
+        "month": 6,
+        "yield_pct": 52.22186994282727
+      },
+      {
+        "month": 7,
+        "yield_pct": 57.20547807821834
+      },
+      {
+        "month": 8,
+        "yield_pct": 61.494909351726214
+      },
+      {
+        "month": 9,
+        "yield_pct": 65.18685706316154
+      },
+      {
+        "month": 10,
+        "yield_pct": 68.36454590693818
+      },
+      {
+        "month": 11,
+        "yield_pct": 71.09960804137364
+      },
+      {
+        "month": 12,
+        "yield_pct": 73.45369783650038
+      },
+      {
+        "month": 13,
+        "yield_pct": 75.4798817003868
+      },
+      {
+        "month": 14,
+        "yield_pct": 77.2238343137376
+      },
+      {
+        "month": 15,
+        "yield_pct": 78.72486823855593
+      },
+      {
+        "month": 16,
+        "yield_pct": 80.01682011053171
+      },
+      {
+        "month": 17,
+        "yield_pct": 81.12881339189852
+      },
+      {
+        "month": 18,
+        "yield_pct": 82.08591487890202
+      },
+      {
+        "month": 19,
+        "yield_pct": 82.90969976301422
+      },
+      {
+        "month": 20,
+        "yield_pct": 83.61873798362798
+      },
+      {
+        "month": 21,
+        "yield_pct": 84.22901283570047
+      },
+      {
+        "month": 22,
+        "yield_pct": 84.75428126869087
+      },
+      {
+        "month": 23,
+        "yield_pct": 85.20638399873002
+      },
+      {
+        "month": 24,
+        "yield_pct": 85.59551242463826
+      },
+      {
+        "month": 25,
+        "yield_pct": 85.9304383646712
+      },
+      {
+        "month": 26,
+        "yield_pct": 86.21871179276923
+      },
+      {
+        "month": 27,
+        "yield_pct": 86.46683103172458
+      },
+      {
+        "month": 28,
+        "yield_pct": 86.68038923979796
+      },
+      {
+        "month": 29,
+        "yield_pct": 86.86420049291777
+      },
+      {
+        "month": 30,
+        "yield_pct": 87.02240830463468
+      },
+      {
+        "month": 31,
+        "yield_pct": 87.15857903011216
+      },
+      {
+        "month": 32,
+        "yield_pct": 87.27578225968624
+      },
+      {
+        "month": 33,
+        "yield_pct": 87.37666001424341
+      },
+      {
+        "month": 34,
+        "yield_pct": 87.46348630223463
+      },
+      {
+        "month": 35,
+        "yield_pct": 87.53821838087205
+      },
+      {
+        "month": 36,
+        "yield_pct": 87.60254087705009
+      }
+    ],
+    "tlc_combo": [
+      {
+        "month": 0,
+        "yield_pct": 0.0
+      },
+      {
+        "month": 1,
+        "yield_pct": 7.422681393195157
+      },
+      {
+        "month": 2,
+        "yield_pct": 14.13900125991742
+      },
+      {
+        "month": 3,
+        "yield_pct": 20.216178786826006
+      },
+      {
+        "month": 4,
+        "yield_pct": 25.715036409220133
+      },
+      {
+        "month": 5,
+        "yield_pct": 30.690608542414594
+      },
+      {
+        "month": 6,
+        "yield_pct": 35.19269238466594
+      },
+      {
+        "month": 7,
+        "yield_pct": 39.266346304270066
+      },
+      {
+        "month": 8,
+        "yield_pct": 42.95234079885672
+      },
+      {
+        "month": 9,
+        "yield_pct": 46.28756654023327
+      },
+      {
+        "month": 10,
+        "yield_pct": 49.3054035886275
+      },
+      {
+        "month": 11,
+        "yield_pct": 52.0360554715498
+      },
+      {
+        "month": 12,
+        "yield_pct": 54.50685147084825
+      },
+      {
+        "month": 13,
+        "yield_pct": 56.74252014334702
+      },
+      {
+        "month": 14,
+        "yield_pct": 58.7654368125547
+      },
+      {
+        "month": 15,
+        "yield_pct": 60.59584750842247
+      },
+      {
+        "month": 16,
+        "yield_pct": 62.25207159641688
+      },
+      {
+        "month": 17,
+        "yield_pct": 63.75068512388671
+      },
+      {
+        "month": 18,
+        "yield_pct": 65.10668671871626
+      },
+      {
+        "month": 19,
+        "yield_pct": 66.33364770063447
+      },
+      {
+        "month": 20,
+        "yield_pct": 67.44384790754421
+      },
+      {
+        "month": 21,
+        "yield_pct": 68.44839859626741
+      },
+      {
+        "month": 22,
+        "yield_pct": 69.35735364773797
+      },
+      {
+        "month": 23,
+        "yield_pct": 70.17981018962132
+      },
+      {
+        "month": 24,
+        "yield_pct": 70.92399964342583
+      },
+      {
+        "month": 25,
+        "yield_pct": 71.59737010733589
+      },
+      {
+        "month": 26,
+        "yield_pct": 72.20666089928196
+      },
+      {
+        "month": 27,
+        "yield_pct": 72.75797000629952
+      },
+      {
+        "month": 28,
+        "yield_pct": 73.25681511523301
+      },
+      {
+        "month": 29,
+        "yield_pct": 73.70818883560024
+      },
+      {
+        "month": 30,
+        "yield_pct": 74.11660866730662
+      },
+      {
+        "month": 31,
+        "yield_pct": 74.48616221330249
+      },
+      {
+        "month": 32,
+        "yield_pct": 74.82054808968745
+      },
+      {
+        "month": 33,
+        "yield_pct": 75.12311294270329
+      },
+      {
+        "month": 34,
+        "yield_pct": 75.39688494309456
+      },
+      {
+        "month": 35,
+        "yield_pct": 75.64460409305916
+      },
+      {
+        "month": 36,
+        "yield_pct": 75.8687496491112
+      }
+    ]
+  },
+  "t95_months": {
+    "qlc": 19.97154849035994,
+    "tlc": 19.97154849035994,
+    "combo_qlc": 14.978661367769954,
+    "combo_tlc": 29.957322735539908
+  },
+  "er_wafer_rate_assumption": "er_wafer_combo / er_wafer_dedicated are each a single monthly ER-wafer consumption RATE for their scenario, applied independently (in full, not split 50/50) to BOTH of that scenario's two lines/recipes -- combo's QLC recipe and TLC recipe each separately consume up to er_wafer_combo wafers/month during their OWN ER period (t <= that recipe's own t95); dedicated's QLC line and TLC line each separately consume up to er_wafer_dedicated wafers/month during their OWN ER period. This mirrors combo_headcount/dedicated_headcount, which are also single scenario-level values used as-is on both lines/recipes.",
+  "cost_mode": "model",
+  "direct_cost_per_gb": {
+    "combo": 0.0,
+    "dedicated": 0.0
+  },
+  "best_combo_bit_production": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "best_combo_cost_per_bit": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "best_dedicated_bit_production": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "best_dedicated_cost_per_bit": {
+    "qlc_ratio": 100,
+    "tlc_ratio": 0,
+    "wafer_qlc_dedicated": 85000.0,
+    "wafer_tlc_dedicated": 0.0,
+    "wafer_qlc_combo": 80000.0,
+    "wafer_tlc_combo": 0.0,
+    "combo_bit_total": 1597440000.0,
+    "combo_cost_total": 40054.0,
+    "combo_cost_per_bit": 2.5073868189102565e-05,
+    "dedicated_bit_total": 1739711999.9999998,
+    "dedicated_cost_total": 52792.0,
+    "dedicated_cost_per_bit": 3.0345252547548105e-05,
+    "combo_bit_total_gb": 199680000.0,
+    "dedicated_bit_total_gb": 217463999.99999997,
+    "combo_cost_per_gb": 0.00020059094551282052,
+    "dedicated_cost_per_gb": 0.00024276202038038484,
+    "five_year_combo_bit_total": 88631358063.46826,
+    "five_year_combo_bit_total_gb": 11078919757.933533,
+    "five_year_combo_sale_bit_total": 88622805197.6054,
+    "five_year_combo_sale_bit_total_gb": 11077850649.700674,
+    "five_year_combo_cost_total": 2400054.0,
+    "five_year_combo_cost_per_bit": 2.7079061547058085e-05,
+    "five_year_combo_cost_per_gb": 0.00021663249237646468,
+    "five_year_dedicated_bit_total": 93634084401.26889,
+    "five_year_dedicated_bit_total_gb": 11704260550.158611,
+    "five_year_dedicated_sale_bit_total": 93616734175.25288,
+    "five_year_dedicated_sale_bit_total_gb": 11702091771.90661,
+    "five_year_dedicated_cost_total": 3162092.0,
+    "five_year_dedicated_cost_per_bit": 3.377073658827969e-05,
+    "five_year_dedicated_cost_per_gb": 0.00027016589270623754,
+    "one_year_combo_bit_total": 12608731591.445131,
+    "one_year_combo_bit_total_gb": 1576091448.9306414,
+    "one_year_combo_sale_bit_total": 12602427225.649408,
+    "one_year_combo_sale_bit_total_gb": 1575303403.206176,
+    "one_year_combo_cost_total": 480054.0,
+    "one_year_combo_cost_per_bit": 3.8073139753859994e-05,
+    "one_year_combo_cost_per_gb": 0.00030458511803087995,
+    "one_year_dedicated_bit_total": 11903538558.794554,
+    "one_year_dedicated_bit_total_gb": 1487942319.8493192,
+    "one_year_dedicated_sale_bit_total": 11895136060.988346,
+    "one_year_dedicated_sale_bit_total_gb": 1486892007.6235433,
+    "one_year_dedicated_cost_total": 632492.0,
+    "one_year_dedicated_cost_per_bit": 5.313478818722381e-05,
+    "one_year_dedicated_cost_per_gb": 0.0004250783054977905
+  },
+  "currency_unit": "억원",
+  "bit_unit": "Gb",
+  "is_sample": true
+}
