@@ -4,8 +4,9 @@
 
 사용자가 반복 업무를 자연어로 한 문단 설명하면, AI 에이전트 팀이 기획 →
 설계 → 구현 → 테스트 → 배포 → 사용 가이드까지 자율 수행해 **재사용
-가능한 Claude Code 스킬**을 만들어 냅니다. 만들어진 스킬은 누구나
-`frame run <이름>` 또는 Claude Code 안에서 `/이름` 으로 호출 가능하고,
+가능한 Claude Code 스킬**을 만들어 냅니다. CLI 빌드·실행·개선 작업은
+기본 Claude Code 또는 선택 가능한 Codex CLI provider로 수행합니다. 만들어진
+스킬은 누구나 `frame run <이름>` 또는 Claude Code 안에서 `/이름` 으로 호출 가능하고,
 파일·이미지·텍스트 어떤 입력이든 받아 결과 파일을 그 회의 `runs/<시각>/`
 폴더에 영구 보관합니다.
 
@@ -215,6 +216,44 @@ git push
 # 동료: git pull → 즉시 /ecn-writer 사용 가능
 ```
 
+### AI provider 선택 — Claude Code / Codex CLI
+
+`frame add`, `frame run`, `frame refine`는 Claude Code를 기본 provider로
+사용합니다. Codex CLI를 사용하려면 해당 CLI를 별도로 설치·로그인한 뒤
+명령에 `--provider codex`를 추가합니다:
+
+```bash
+./frame add "업무 메모를 요약하고 체크리스트로 만들어 줘" --provider codex
+./frame run meeting-summarizer --in meeting.vtt "액션 아이템 정리" --provider codex
+./frame refine meeting-summarizer "결정 사항 섹션을 추가해 줘" --provider codex
+```
+
+현재 셸의 기본 provider를 바꾸려면 `FRAMEAI_PROVIDER`를 사용합니다. 명령의
+`--provider`가 환경 변수보다 우선하며, 둘 다 생략하면 `claude`입니다.
+
+```bash
+export FRAMEAI_PROVIDER=codex
+./frame run meeting-summarizer --in meeting.vtt "영문 요약"
+
+# 한 번만 Claude Code로 실행
+./frame run meeting-summarizer --in meeting.vtt "영문 요약" --provider claude
+```
+
+Codex adapter는 `codex exec --ephemeral`로 저장소 루트에서 실행되며,
+FrameAI의 기존 prompt·입출력·`runs/<시각>/` archive 계약을 그대로 사용합니다.
+인증과 설정은 설치된 Codex CLI가 관리하고 FrameAI가 provider 간 자동
+fallback이나 retry를 수행하지 않습니다.
+
+> **Codex 보안 경고**: 현재 adapter는 승인된 FrameAI host의 외부 격리를
+> 전제로 Codex의 자체 approvals와 sandbox를 비활성화합니다. 신뢰할 수 있는
+> checkout과 별도 격리 경계에서만 사용하고 production target에는 직접
+> 사용하지 마십시오. 선택할 때마다 CLI에도 경고가 출력됩니다.
+
+설치부터 샘플 비교 실행까지는
+[`docs/getting-started-claude-codex.md`](docs/getting-started-claude-codex.md),
+정확한 dispatch 계약·운영 점검·rollback은
+[`docs/codex-adapter-operator.md`](docs/codex-adapter-operator.md)를 참고하십시오.
+
 ### Claude Code 가 스킬을 어떻게 찾는가
 
 frameai repo 안의 `.claude/` 디렉토리가 Claude Code 의 표준 발견 경로입니다.
@@ -236,9 +275,11 @@ frameai/.claude/
 - 별도 "프로젝트 등록" 작업 없음 — Claude Code 앱은 폴더 자체를 프로젝트로
   인식. cmux/Desktop 앱은 Recent Projects 사이드바에서 한 번 열면 등록
 
-`frame add` 와 `frame run` 둘 다 Claude Code 를 헤드리스 (`claude --print`)
-로 호출합니다. **사용자 추가 입력 없이** 전체 빌드/실행이 진행되고, 진행
-상황은 stdout 으로 흘러나옵니다.
+기본적으로 `frame add`, `frame run`, `frame refine`는 Claude Code를 헤드리스
+(`claude --print`)로 호출합니다. `--provider codex` 또는
+`FRAMEAI_PROVIDER=codex`를 지정하면 같은 FrameAI 계약으로 Codex CLI
+(`codex exec`)를 호출합니다. **사용자 추가 입력 없이** 작업이 진행되고,
+진행 상황은 stdout으로 흘러나옵니다.
 
 ## 파일 · 이미지 · 멀티모달 입력
 
@@ -362,7 +403,8 @@ frameai/
 
 ## 빌드 방식 및 활용 AI 툴
 
-- **모델**: Anthropic Claude (Opus 4.7 / Sonnet 4.6) + 자동 폴백
+- **AI provider**: Claude Code (기본) 또는 Codex CLI (`--provider codex`)
+- **Claude 모델**: Anthropic Claude (Opus 4.7 / Sonnet 4.6) + 자동 폴백
   (`fallbackModel: ["claude-sonnet-4-6", "claude-haiku-4-5"]`)
 - **런타임**: Claude Code v2.1.145+ (자체 검증된 지원 매트릭스는
   [`docs/cc_feature_matrix.md`](docs/cc_feature_matrix.md) 참고)
