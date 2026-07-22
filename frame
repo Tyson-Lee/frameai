@@ -33,6 +33,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from frameai.providers import CodexAdapter, ProviderAdapter, get_provider
+
 ROOT = Path(__file__).resolve().parent
 AUTOMATIONS = ROOT / "automations"
 SKILLS = ROOT / "skills"
@@ -194,8 +196,33 @@ def timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")
 
 
-def find_claude() -> str | None:
-    return shutil.which("claude")
+def selected_provider(args: argparse.Namespace) -> ProviderAdapter | None:
+    """Resolve explicit CLI selection, then environment, then Claude default."""
+
+    name = args.provider or os.environ.get("FRAMEAI_PROVIDER", "claude")
+    try:
+        adapter = get_provider(name)
+    except ValueError as exc:
+        print(f"frame: {exc}", file=sys.stderr)
+        return None
+    if name == "codex":
+        print(
+            "FrameAI WARNING: Codex approvals and sandbox are disabled. "
+            "Use only in a trusted checkout with an external isolation boundary.",
+            file=sys.stderr,
+        )
+    return adapter
+
+def require_provider(adapter: ProviderAdapter) -> bool:
+    if adapter.is_available():
+        return True
+    print(
+        f"FrameAI: `{adapter.executable}` CLI not found on PATH. "
+        f"Install {adapter.display_name} first.",
+        file=sys.stderr,
+    )
+    return False
+
 
 
 def write_input_md(target: Path, description: str) -> Path:
@@ -220,6 +247,10 @@ def cmd_add(args: argparse.Namespace) -> int:
         print("frame add: description must be non-empty", file=sys.stderr)
         return 2
 
+    adapter = selected_provider(args)
+    if adapter is None:
+        return 2
+
     slug = args.slug or slugify(description)
     auto_dir = AUTOMATIONS / slug
     skill_dir = SKILLS / slug
@@ -240,7 +271,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     )
 
     print(f"FrameAI: scaffolded automations/{slug}/")
-    print(f"FrameAI: dispatching Claude Code (headless build pipeline)…")
+    print(f"FrameAI: dispatching {adapter.display_name} (headless build pipeline)…")
     print()
 
     if args.dry_run:
@@ -248,14 +279,10 @@ def cmd_add(args: argparse.Namespace) -> int:
         print(prompt)
         return 0
 
-    if find_claude() is None:
-        print(
-            "FrameAI: `claude` CLI not found on PATH. Install Claude Code first.",
-            file=sys.stderr,
-        )
+    if not require_provider(adapter):
         return 3
 
-    return subprocess.run(["claude", "--print", prompt], cwd=ROOT).returncode
+    return adapter.run(prompt, cwd=ROOT).returncode
 
 
 def cmd_list(_args: argparse.Namespace) -> int:
@@ -299,6 +326,10 @@ def cmd_run(args: argparse.Namespace) -> int:
             f"Build first with: frame add \"<description>\"",
             file=sys.stderr,
         )
+        return 2
+
+    adapter = selected_provider(args)
+    if adapter is None:
         return 2
 
     auto_dir = AUTOMATIONS / slug
@@ -358,18 +389,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     prompt_path.write_text(prompt, encoding="utf-8")
 
     print(f"FrameAI: starting run → {run_dir.relative_to(ROOT)}/")
-    print(f"FrameAI: dispatching Claude Code…")
+    print(f"FrameAI: dispatching {adapter.display_name}…")
 
     if args.dry_run:
         print("--- prompt (--dry-run) ---")
         print(prompt)
         return 0
 
-    if find_claude() is None:
-        print(
-            "FrameAI: `claude` CLI not found on PATH. Install Claude Code first.",
-            file=sys.stderr,
-        )
+    if not require_provider(adapter):
         return 3
 
     env = {
@@ -385,11 +412,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         f"FRAMEAI_RUN_TEXT={env['FRAMEAI_RUN_TEXT']!r}\n"
         f"FRAMEAI_RUN_MODE=cli\n"
     )
-    log_path.write_text(env_intro + "\n--- claude --print stdout ---\n", encoding="utf-8")
+    log_path.write_text(
+        env_intro + f"\n--- {adapter.invocation_label} ---\n", encoding="utf-8"
+    )
 
     with log_path.open("a", encoding="utf-8") as logf:
-        proc = subprocess.run(
-            ["claude", "--print", prompt],
+        proc = adapter.run(
+            prompt,
             cwd=ROOT,
             stdout=logf,
             stderr=subprocess.STDOUT,
@@ -422,6 +451,10 @@ def cmd_refine(args: argparse.Namespace) -> int:
         )
         return 2
 
+    adapter = selected_provider(args)
+    if adapter is None:
+        return 2
+
     refinement = args.refinement.strip()
     if not refinement:
         print("frame refine: refinement description must be non-empty", file=sys.stderr)
@@ -435,14 +468,10 @@ def cmd_refine(args: argparse.Namespace) -> int:
         print(prompt)
         return 0
 
-    if find_claude() is None:
-        print(
-            "FrameAI: `claude` CLI not found on PATH. Install Claude Code first.",
-            file=sys.stderr,
-        )
+    if not require_provider(adapter):
         return 3
 
-    return subprocess.run(["claude", "--print", prompt], cwd=ROOT).returncode
+    return adapter.run(prompt, cwd=ROOT).returncode
 
 
 def cmd_update(args: argparse.Namespace) -> int:
@@ -553,6 +582,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    def add_provider_argument(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "--provider",
+            choices=("claude", "codex"),
+            help="AI CLI provider (default: FRAMEAI_PROVIDER or claude).",
+        )
+
     a = sub.add_parser(
         "add",
         help="Build a new automation skill from a natural-language description.",
@@ -569,6 +605,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the dispatch prompt without invoking claude.",
     )
+    add_provider_argument(a)
     a.set_defaults(func=cmd_add)
 
     sub.add_parser(
@@ -605,6 +642,7 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="Free-form text arguments passed to the skill.",
     )
+    add_provider_argument(r)
     r.set_defaults(func=cmd_run)
 
     rf = sub.add_parser(
@@ -618,6 +656,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the dispatch prompt without invoking claude.",
     )
+    add_provider_argument(rf)
     rf.set_defaults(func=cmd_refine)
 
     s = sub.add_parser("share", help="Stage + commit an automation for sharing.")
